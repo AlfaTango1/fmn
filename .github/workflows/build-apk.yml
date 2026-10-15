@@ -16,13 +16,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get files
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - name: Check app files
+        run: |
+          # If the zip itself was uploaded - unpack it
+          if [ ! -f package.json ]; then
+            Z=$(find . -name "*.zip" -not -path "./.git/*" | head -n1)
+            if [ -n "$Z" ]; then echo "Unpacking $Z"; unzip -o -q "$Z" -d . ; fi
+          fi
+          # If files were uploaded inside a subfolder - move them to the root
+          if [ ! -f package.json ]; then
+            P=$(find . -name package.json -not -path "./.git/*" -not -path "*/node_modules/*" | head -n1)
+            if [ -n "$P" ]; then D=$(dirname "$P"); echo "Files found in $D"; cp -rn "$D"/. . ; fi
+          fi
+          echo "Files in repository:"; ls -la
+          MISSING=""
+          for f in index.html package.json capacitor.config.json icon.png release.keystore; do
+            [ -f "$f" ] || MISSING="$MISSING $f"
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::Not uploaded to repository:$MISSING -> Add file > Upload files, then Actions > Build APK > Run workflow"
+            exit 1
+          fi
+          echo "All files OK"
+
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
