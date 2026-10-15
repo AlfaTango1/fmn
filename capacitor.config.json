@@ -1,0 +1,7 @@
+{
+  "appId": "uz.aviation.fmn",
+  "appName": "Flight Mission Navigator",
+  "webDir": "www",
+  "android": { "allowMixedContent": false },
+  "server": { "androidScheme": "https" }
+}
