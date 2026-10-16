@@ -36,7 +36,7 @@ jobs:
             [ -f "$f" ] || MISSING="$MISSING $f"
           done
           if [ -n "$MISSING" ]; then
-            echo "::error::Not uploaded to repository:$MISSING -> Add file > Upload files, then Actions > Build APK > Run workflow"
+            echo "::error::Not uploaded to repository:$MISSING  -> Add file > Upload files, then Actions > Build APK > Run workflow"
             exit 1
           fi
           echo "All files OK"
@@ -74,16 +74,16 @@ jobs:
       - name: GPS permission and screen always on
         run: |
           M=android/app/src/main/AndroidManifest.xml
-          sed -i 's#</manifest># <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' "$M"
+          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' "$M"
           MA=$(find android/app/src/main/java -name MainActivity.java | head -n1)
           PKG=$(sed -n 's/^package \(.*\);/\1/p' "$MA")
           printf '%s\n' "package $PKG;" "" "import android.os.Bundle;" "import android.view.WindowManager;" "import com.getcapacitor.BridgeActivity;" "" \
             "public class MainActivity extends BridgeActivity {" \
-            " @Override" \
-            " public void onCreate(Bundle savedInstanceState) {" \
-            " super.onCreate(savedInstanceState);" \
-            " getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);" \
-            " }" "}" > "$MA"
+            "    @Override" \
+            "    public void onCreate(Bundle savedInstanceState) {" \
+            "        super.onCreate(savedInstanceState);" \
+            "        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);" \
+            "    }" "}" > "$MA"
 
       - name: App icon
         continue-on-error: true
