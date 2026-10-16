@@ -88,8 +88,9 @@ jobs:
       - name: App icon
         continue-on-error: true
         run: |
-          mkdir -p assets && cp icon.png assets/icon.png
-          npx --yes @capacitor/assets@3.0.5 generate --android --assetPath assets
+          mkdir -p assets && cp icon.png assets/icon-only.png
+          for f in icon-foreground.png icon-background.png splash.png splash-dark.png; do [ -f "$f" ] && cp "$f" assets/; done
+          npx --yes @capacitor/assets@3.0.5 generate --android --assetPath assets --iconBackgroundColor '#000000' --iconBackgroundColorDark '#000000' --splashBackgroundColor '#000000' --splashBackgroundColorDark '#000000'
 
       - name: Copy app into Android project
         run: npx cap sync android
