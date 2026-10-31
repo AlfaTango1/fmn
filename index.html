@@ -283,9 +283,9 @@ table.dt tr:last-child td{border-bottom:0}
 .bulk>span:first-child{flex:1;min-width:0}
 .bulk .actions{flex-wrap:nowrap}
 
-:root{--border-uz:#ae00ff}
+:root{--border-uz:#E0201B}
 .border-uz{stroke:var(--border-uz);fill:none;stroke-dasharray:14 5 3 5;stroke-linecap:butt}
-.border-uz-halo{stroke:var(--border-uz);fill:none;opacity:.22}
+.border-uz-halo{stroke:var(--border-uz);fill:none;opacity:.32}
 #h-mil{font:600 13px/1.2 var(--f-data);margin-top:4px}
 #h-mil:empty{display:none}
 
@@ -555,6 +555,19 @@ body{font-family:var(--f-display)}
 .pt-ico.inrt .pt-lbl{font:700 13px/1 var(--f-display);letter-spacing:.02em;left:20px;top:-9px}
 .pt-lbl{font-family:var(--f-display);font-weight:700;letter-spacing:.03em}
 
+
+/* procedures and circuits, drawn like approach charts */
+.proc-case{stroke:#fff;stroke-opacity:.8;fill:none;stroke-linejoin:round;stroke-linecap:round}
+.proc{stroke:#111;fill:none;stroke-linejoin:round;stroke-linecap:round}
+.proc.proc-SID,.proc.proc-MAPP{stroke:#2F7D32;stroke-dasharray:7 5}.proc.proc-STAR{stroke:#9C36B5}.proc.proc-HOLD{stroke:#F08C00}
+:root[data-theme="dark"] .proc{stroke:#e8eef6}:root[data-theme="dark"] .proc-case{stroke:#000;stroke-opacity:.5}
+@media (prefers-color-scheme: dark){ :root:not([data-theme]) .proc{stroke:#e8eef6} :root:not([data-theme]) .proc-case{stroke:#000;stroke-opacity:.5} }
+.pfx{position:absolute;left:0;top:0;pointer-events:none;white-space:nowrap;font:700 11.5px/1.1 var(--f-display);color:#000;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff}
+.pfx i{position:absolute;left:-4.5px;top:-4.5px;width:9px;height:9px;border-radius:50%;background:#fff;border:1.8px solid #000;box-sizing:border-box}
+.pfx b{position:absolute;left:8px;top:-15px}.pfx small{position:absolute;left:8px;top:-2px;font-weight:700;font-size:10.5px;color:#002060}
+.ptag{position:absolute;left:10px;top:6px;pointer-events:none;white-space:nowrap;font:700 10.5px/1 var(--f-display);text-transform:uppercase;letter-spacing:.04em;color:#fff;background:#0B1F3F;padding:2px 5px;border-radius:3px}
+.pgen{border:1px dashed var(--s-btn-bd,var(--line));border-radius:6px;padding:6px 8px;margin:6px 0}
+.hgrp{display:flex;align-items:center}
 </style>
 </head>
 <body>
@@ -1314,8 +1327,7 @@ function renderLib(){
   LIB.points.forEach(p=>{ if(libVisible(p)||inRoute.has(p.id)) addMarker(p,gLibP,true,inRoute.has(p.id)); });
   LIB.ads.forEach(a=>{ const show=libVisible(a)||inRoute.has(a.id)||(VIEW.sub==='adCard'&&VIEW.id===a.id); if(!show) return; addMarker(a,gLibP,true,inRoute.has(a.id));
     if(CFG.libShow.rwy!==false) a.rwys.forEach(w=>{ if(w.lat1!=null&&w.lat2!=null) gLibP.addLayer(L.polyline([[w.lat1,w.lon1],[w.lat2,w.lon2]],{className:'rwy-line',interactive:false})); });
-    if(CFG.libShow.proc!==false) (a.procs||[]).filter(isVis).forEach(pr=>{ const ll=pr.fixes.filter(f=>f.lat!=null).map(f=>[f.lat,f.lon]); if(ll.length>1){ gProc.addLayer(L.polyline(ll,{className:'proc-'+pr.type,weight:2.5,interactive:false}));
-      const m=ll[Math.floor(ll.length/2)]; gProc.addLayer(L.marker(m,{interactive:false,icon:lblIcon(`<span class="leg-lbl dim">${esc(pr.type)} ${esc(pr.name)}</span>`)})); } }); });
+    if(CFG.libShow.proc!==false) (a.procs||[]).filter(isVis).forEach(pr=>drawProc(a,pr)); });
 }
 function renderMap(){
   gZones.clearLayers(); gRoutes.clearLayers(); gPoints.clearLayers();
@@ -1668,7 +1680,7 @@ function catItems(){
   const q=(VIEW.q||'').trim().toLowerCase();
   if(VIEW.cat==='routes') return MS.routes.filter(r=>matchQ(r,q));
   if(VIEW.cat==='zones') return MS.zones.filter(z=>matchQ(z,q)).concat(q?LIB.zones.filter(z=>matchQ(z,q)):[]);
-  const f=VIEW.pf, src=f==='mine'?MS.points:f==='nav'?LIB.points.filter(isNav):f==='wpt'?LIB.points.filter(p=>!isNav(p)):MS.points.concat(LIB.points);
+  const f=VIEW.pf, H=p=>HELT.has(p.type), src=f==='mine'?MS.points:f==='nav'?LIB.points.filter(isNav):f==='hel'?LIB.points.filter(H):f==='wpt'?LIB.points.filter(p=>!isNav(p)&&(q||!H(p))):MS.points.concat(LIB.points.filter(p=>q||!H(p)));
   const ref=FLY.pos||(map.getCenter?(c=>({lat:c.lat,lon:c.lng}))(map.getCenter()):null);
   const byD=(a,b)=>inverse(ref.lat,ref.lon,a.lat,a.lon).dist-inverse(ref.lat,ref.lon,b.lat,b.lon).dist;
   return src.filter(p=>matchQ(p,q)).sort(VIEW.sort==='dist'&&ref?byD:(a,b)=>typeOrder(a.type)-typeOrder(b.type)||a.name.localeCompare(b.name)).slice(0,300);
@@ -1687,7 +1699,7 @@ function catBody(){
   const chip=(k,l)=>`<button class="chip-b" aria-pressed="${VIEW.pf===k}" data-act="pf" data-k="${k}">${t(l)}</button>`;
   return `<div class="actions"><button class="btn primary big" data-act="ptTap">${t('Tap on map')}</button><button class="btn big" data-act="ptNew">${t('Coordinates')}</button></div>
   <div class="actions"><button class="btn" data-act="tool" data-tool="rdme">${t('From navaid R/D')}</button><button class="btn" data-act="ptPaste">${t('Paste list')}</button></div>
-  <div class="chips">${chip('mine','My points')}${chip('nav','Navaids')}${chip('wpt','Reference points')}${chip('all','All')}</div>${bulk}
+  <div class="chips">${chip('mine','My points')}${chip('nav','Navaids')}${chip('wpt','Reference points')}${chip('hel','Helipads')}${chip('all','All')}</div>${helGroup()}${VIEW.pf==='hel'?'':bulk}
   ${items.length?`<ul class="list">${items.map(pointRow).join('')}</ul>`:`<p class="empty">${(VIEW.q||'').trim()?t('No matches.'):t('No points yet. Add navaids, airfields and turning points — elevation above mean sea level is filled in automatically.')}</p>`}
   <p class="note">${t('Long-press anywhere on the map for coordinates, elevation and radial/distance from the nearest navaid.')}</p>`;
 }
@@ -1924,7 +1936,7 @@ function vAdCard(){
     return (e||[{des:(w.des||'').split('/')[0]},{des:(w.des||'').split('/')[1]}]).map((x,i)=>`<tr><td class="tx"><b>${esc(x.des||'—')}</b></td><td>${x.ik!=null?fmtBrg(x.ik):'—'}</td><td>${x.mk!=null?fmtBrg(x.mk):'—'}</td><td>${i?'':len}</td><td class="tx">${i?'':esc(w.surf||'')}</td><td>${(i?w.el2:w.el1)!=null?fmtAltN(i?w.el2:w.el1):'—'}</td></tr>`).join(''); }).join('');
   const navRows=navs.map(n=>{ const d=inverse(a.lat,a.lon,n.lat,n.lon); return `<tr><td class="tx"><b>${esc(n.name)}</b></td><td class="tx">${esc(PTN(n.type))}</td><td>${esc(n.freq||'—')}</td><td>${n.rwy?esc(n.rwy):''}${n.crs!=null?' '+fmtBrg(n.crs):''}</td><td>${fmtBrg(d.az1-v)} ${fmtDistN(d.dist)}</td></tr>`; }).join('');
   const fqRows=a.frq.map(f=>`<tr><td class="tx"><b>${esc(f.type)}</b></td><td class="tx">${esc(f.desc||'')}</td><td>${esc(f.mhz)}</td></tr>`).join('');
-  const prRows=(a.procs||[]).map(p=>`<li class="crow"><div class="row" style="cursor:default"><span class="row-main"><b>${esc(p.type)} ${esc(p.name)}</b><small>${t('RWY')} ${esc(p.rwy||'—')} · ${p.fixes.map(f=>esc(f.name)+(f.alt?' '+esc(f.alt):'')).join(' – ')}</small></span></div><button class="eye${isVis(p)?' on':''}" data-act="procVis" data-id="${p.id}">${isVis(p)?EYE:EYE_OFF}</button></li>`).join('');
+  const prRows=(a.procs||[]).map(p=>`<li class="crow"><div class="row" style="cursor:default"><span class="row-main"><b>${esc(procName(p.type))} ${esc(p.name)}</b><small>${t('RWY')} ${esc(p.rwy||'—')} · ${p.fixes.map(f=>esc(f.name)+(f.alt?' '+esc(f.alt):'')).join(' – ')}</small></span></div><button class="eye${isVis(p)?' on':''}" data-act="procVis" data-id="${p.id}">${isVis(p)?EYE:EYE_OFF}</button></li>`).join('');
   return `<button class="back" data-act="back">‹ ${t('Aerodromes')}</button>
   <div class="ph"><h2>${esc(a.name)}${a.iata?' · '+esc(a.iata):''}</h2><span class="sub">${esc(a.cc||'')}</span></div>
   <p class="note" style="color:var(--fg)">${esc(a.full||'')}${a.city?' · '+esc(a.city):''}${a.ident&&a.ident!==a.name?` · ${t('old code')} ${esc(a.ident)}`:''}</p>
@@ -1944,7 +1956,7 @@ function adDraft(a){
   const d=a?JSON.parse(JSON.stringify(a)):{id:'ADU:'+uid(),type:'AD',name:'',icao:'',iata:'',full:'',city:'',cc:'UZ',lat:null,lon:null,elev:null,elevSrc:'pending',magVar:null,varSrc:null,rwys:[],frq:[],procs:[],note:'',src:'user',vis:true};
   d._navs=a?LIB.points.filter(p=>p.ad===a.id).map(p=>JSON.parse(JSON.stringify(p))):[];
   d._new=!a; d.rwys.forEach(w=>{ if(w.hdgT==null&&w.mkSet!=null) w.hdgT=n360(w.mkSet+adVar(d)); });
-  d.procs.forEach(p=>{ p._txt=p.fixes.map(f=>[f.name,f.lat!=null&&!f.named?fmtLL(f.lat,f.lon,'DMS'):'',f.alt||''].filter(Boolean).join(' ; ')).join('\n'); });
+  d.procs.forEach(p=>{ p._txt=p.fixes.map(f=>[f.name,f.src||(f.lat!=null&&!f.named?fmtLL(f.lat,f.lon,'DMS'):''),f.alt||''].filter(Boolean).join(' ; ')).join('\n'); if(PROC_GEN.has(p.type)) procGenDefaults(p); });
   return d;
 }
 const NAV_EDIT=['VORDME','VOR','DME','TACAN','RSBN','NDB','LOM','LMM','ILS','GP','PRMG','MKR'];
@@ -1962,8 +1974,9 @@ function vAdEdit(){
   const fq=d.frq.map((f,i)=>`<div class="edrow"><div class="edh">${t('Frequency')} ${i+1}<button class="btn sm danger" data-act="adRow" data-k="frq" data-i="${i}">✕</button></div>
     <div class="grid3"><label class="f"><span>${t('Service')}</span>${inp(`frq.${i}.type`,f.type,'TWR')}</label><label class="f"><span>${t('Call sign')}</span>${inp(`frq.${i}.desc`,f.desc,'')}</label><label class="f"><span>MHz</span>${inp(`frq.${i}.mhz`,f.mhz,'120.4','num')}</label></div></div>`).join('');
   const pr=d.procs.map((p,i)=>`<div class="edrow"><div class="edh">${t('Procedure')} ${i+1}<button class="btn sm danger" data-act="adRow" data-k="procs" data-i="${i}">✕</button></div>
-    <div class="grid3"><label class="f"><span>${t('Type')}</span><select data-on="ade" data-p="procs.${i}.type">${['SID','STAR','APP'].map(k=>`<option${p.type===k?' selected':''}>${k}</option>`).join('')}</select></label><label class="f"><span>${t('Name')}</span>${inp(`procs.${i}.name`,p.name,'ABDUN 1A')}</label><label class="f"><span>${t('RWY')}</span>${inp(`procs.${i}.rwy`,p.rwy,'08L')}</label></div>
-    <label class="f"><span>${t('Fixes in order — name ; coordinates (optional) ; altitude (optional)')}</span><textarea data-on="ade" data-p="procs.${i}._txt" placeholder="ABDUN&#10;TT401 ; 411500N 0690500E ; 1500 m&#10;UTTT">${esc(p._txt||'')}</textarea></label></div>`).join('');
+    <div class="grid3"><label class="f"><span>${t('Type')}</span><select data-on="ade" data-p="procs.${i}.type">${PROC_T.map(k=>`<option value="${k}"${p.type===k?' selected':''}>${procName(k)}</option>`).join('')}</select></label><label class="f"><span>${t('Name')}</span>${inp(`procs.${i}.name`,p.name,'ABDUN 1A')}</label><label class="f"><span>${t('RWY')}</span>${inp(`procs.${i}.rwy`,p.rwy,'08L')}</label></div>
+    ${vProcEdit(d,p,i)}<div class="grid2"><label class="f"><span>${t('Turn speed (km/h)')}</span><input class="num" data-on="ade" data-p="procs.${i}.spd" inputmode="decimal" value="${p.spd||''}" placeholder="300"></label><label class="f"><span>${t('Bank (°)')}</span><input class="num" data-on="ade" data-p="procs.${i}.bank" inputmode="decimal" value="${p.bank||''}" placeholder="30"></label></div>
+    <label class="f"><span>${t('Fixes in order — name ; coordinates or R278 D18.9 or RWY 24 ; altitude')}</span><textarea data-on="ade" data-p="procs.${i}._txt" placeholder="ABDUN&#10;TT401 ; 411500N 0690500E ; 1500 m&#10;UTTT">${esc(p._txt||'')}</textarea></label></div>`).join('');
   return `<button class="back" data-act="adCancel">‹ ${t('Cancel')}</button>
   <div class="ph"><h2>${d._new?t('New aerodrome'):esc(d.name)}</h2></div>
   <div class="form">
@@ -1998,11 +2011,11 @@ function adSaveDraft(){
     const pt={id:n.id||('NVU:'+uid()),name:(n.name||'').toUpperCase()||n.type,type:n.type||'NDB',lat:c?c.lat:a.lat,lon:c?c.lon:a.lon,elev:n.elev??null,elevSrc:n.elev!=null?(n.elevSrc||'data'):'pending',freq:n.freq||'',magVar:num(n.magVar),crs:num(n.crs),rwy:(n.rwy||'').toUpperCase(),full:n.full||'',ad:a.id,note:n.note||'',src:n.src==='OA'?'OA*':(n.src||'user'),vis:n.vis!==false};
     const j=LIB.points.findIndex(p=>p.id===pt.id); if(j<0) LIB.points.push(pt); else LIB.points[j]=pt; if(pt.elev==null) queueElev(pt); });
   reindex();
-  a.procs=d.procs.map(p=>({id:p.id||uid(),type:p.type||'SID',name:p.name||'',rwy:p.rwy||'',vis:p.vis!==false,fixes:parseFixes(p._txt||'',a)}));
+  a.procs=d.procs.map(p=>({id:p.id||uid(),type:p.type||'SID',name:p.name||'',rwy:p.rwy||(p.gen&&p.gen.end)||'',vis:p.vis!==false,spd:num(p.spd),bank:num(p.bank),gen:p.gen||null,fixes:parseFixes(p._txt||'',a)}));
   if(a.elevSrc==='pending') queueElev(a); saveLib(); return a;
 }
 function parseFixes(txt,a){
-  return txt.split(/\n/).map(s=>s.trim()).filter(Boolean).map(ln=>{ const f=ln.split(/;|\t/).map(s=>s.trim()); let name=f[0]; let c=f[1]?parseCoord(f[1]):null, alt=f[2]||'';
+  return txt.split(/\n/).map(s=>s.trim()).filter(Boolean).map(ln=>{ const f=ln.split(/;|\t/).map(s=>s.trim()); let name=f[0]; const rf=f[1]?fixRef(f[1],a):null; if(rf) return {name,lat:rf.lat,lon:rf.lon,alt:f[2]||'',named:false,src:f[1]}; let c=f[1]?parseCoord(f[1]):null, alt=f[2]||'';
     if(!c&&!f[1]&&/\d{4}/.test(name)){ const c0=parseCoord(name); if(c0){ c=c0; name=fmtLL(c0.lat,c0.lon,'DM'); } }
     if(!c&&f[1]&&!parseCoord(f[1])) alt=f[1];
     let named=false; if(!c){ const cands=allPts().filter(p=>p.name.toUpperCase()===name.toUpperCase()); cands.sort((x,y)=>inverse(a.lat,a.lon,x.lat,x.lon).dist-inverse(a.lat,a.lon,y.lat,y.lon).dist); if(cands[0]){ c={lat:cands[0].lat,lon:cands[0].lon}; named=true; } }
@@ -2068,6 +2081,7 @@ function vFly(){
   <div class="actions" style="margin-top:10px"><button class="btn" data-act="legPrev">${t('‹ Prev')}</button><button class="btn" data-act="legNext">${t('Next ›')}</button>${FLY.direct?`<button class="btn" data-act="dirCancel">${t('Cancel direct')}</button>`:''}</div>`
   :`<p class="note">${t('Activate a route for bearing, distance, ETE, ETA and cross-track to each waypoint. You can also fly direct to any point from its map popup.')}</p>`}
   ${vFlyMil()}
+  ${vAltim()}
   <h3>${t('Track log')}</h3><p class="note">${t('{n} positions recorded (every 4 s).',{n:MS.track.length})}</p>
   <div class="actions"><button class="btn" data-act="expTrack" ${MS.track.length?'':'disabled'}>${t('Export GPX')}</button><button class="btn danger" data-act="trkClear" ${MS.track.length?'':'disabled'}>${t('Clear track')}</button></div>
   <p class="note">${t('A situational-awareness aid using the device’s GPS. It is not certified for navigation; fly by the aircraft’s approved instruments.')}</p>`;
@@ -2526,7 +2540,7 @@ Object.assign(ACT,{
   adEdit:d=>{ Object.assign(VIEW,{tab:'ad',sub:'adEdit',id:d.id,draft:adDraft(AD(d.id))}); renderPanel(); },
   adNew:()=>{ Object.assign(VIEW,{tab:'ad',sub:'adEdit',id:null,draft:adDraft(null)}); renderPanel(); },
   adCancel:()=>{ const id=VIEW.draft&&!VIEW.draft._new?VIEW.draft.id:null; VIEW.draft=null; id?openView('ad','adCard',id):openView('ad'); },
-  adAdd:d=>{ const dr=VIEW.draft, k=d.k; const empty={rwys:{des:'',hdgT:null,surf:''},_navs:{id:null,type:'NDB',name:'',freq:'',rwy:'',crs:null,magVar:null},frq:{type:'',desc:'',mhz:''},procs:{id:uid(),type:'SID',name:'',rwy:'',fixes:[],_txt:'',vis:true}}[k];
+  adAdd:d=>{ const dr=VIEW.draft, k=d.k; const empty={rwys:{des:'',hdgT:null,surf:''},_navs:{id:null,type:'NDB',name:'',freq:'',rwy:'',crs:null,magVar:null},frq:{type:'',desc:'',mhz:''},procs:{id:uid(),type:'CIRC',name:'',rwy:'',fixes:[],_txt:'',vis:true}}[k];
     dr[k].push(JSON.parse(JSON.stringify(empty))); renderPanel(); },
   adRow:d=>{ VIEW.draft[d.k].splice(+d.i,1); renderPanel(); },
   adSave:()=>{ const a=adSaveDraft(); if(!a) return; VIEW.draft=null; toast(t('Saved {n}',{n:a.name})); openView('ad','adCard',a.id); },
@@ -2555,7 +2569,7 @@ Object.assign(ON,{
   ade:el=>{ const d=VIEW.draft; if(!d) return; const p=el.dataset.p, v=el.value;
     if(/^rwys\.\d+\._mk$/.test(p)){ const i=+p.split('.')[1], n=num(v); d.rwys[i].hdgT=n==null?null:n360(n+adVar(d)); const h=$(`[data-p="rwys.${i}.hdgT"]`); if(h) h.value=d.rwys[i].hdgT!=null?Math.round(d.rwys[i].hdgT*10)/10:''; return; }
     if(/^rwys\.\d+\.hdgT$/.test(p)){ const i=+p.split('.')[1], n=num(v); d.rwys[i].hdgT=n; const m=$('#mk-'+i); if(m) m.value=n!=null?Math.round(n360(n-adVar(d))*10)/10:''; return; }
-    setPath(d,p,v); },
+    setPath(d,p,v); if(/^procs\.\d+\.(type|gen\.end)$/.test(p)&&el.tagName==='SELECT') renderPanel(); },
   wsearch:el=>{ const q=el.value.trim().toLowerCase(), ul_=$('#wsugg'); if(!q){ ul_.hidden=true; return; }
     const r=Rt(VIEW.id), last=routePts(r).slice(-1)[0];
     const res=allPts().filter(p=>matchQ(p,q)).sort((a,b)=>{ const ea=(a.name.toLowerCase()===q?0:1)-(b.name.toLowerCase()===q?0:1); if(ea) return ea; if(!last) return 0; return inverse(last.lat,last.lon,a.lat,a.lon).dist-inverse(last.lat,last.lon,b.lat,b.lon).dist; }).slice(0,12);
@@ -2777,8 +2791,8 @@ async function autoDefaultVar(){ if(CFG.varSet||navigator.onLine===false) return
 setTimeout(autoDefaultVar,5000);
 setInterval(()=>{ milHud(); const w=$('#mil-w'); if(w) w.textContent=fmtEte(watchSec()); },1000);
 /* ================= avionics-style interface (data fields, nav strip, softkeys, home, messages) ================= */
-const FLD_LBL={EN:{DTK:'DTK',TRK:'TRK',GS:'GS',ETE:'ETE',DIS:'DIS',BRG:'BRG',ALT:'ALT',ETA:'ETA',XTK:'XTK',TKE:'TKE',VSR:'VSR',MSA:'MSA',DEST:'ETA DEST',DDIS:'DIS DEST',FUEL:'FUEL',UTC:'UTC',LCL:'LCL',TMR:'TIMER',BDR:'BORDER',WPT:'WPT'},
-  RU:{DTK:'ЗМПУ',TRK:'ФМПУ',GS:'W',ETE:'t',DIS:'S',BRG:'ПЕЛ',ALT:'H',ETA:'ПРИБ',XTK:'ЛБУ',TKE:'ΔПУ',VSR:'Vy ТРЕБ',MSA:'Hбез',DEST:'ПРИБ КОН',DDIS:'S КОН',FUEL:'ТОПЛ',UTC:'UTC',LCL:'МЕСТН',TMR:'СЕКУНД',BDR:'ГРАНИЦА',WPT:'ППМ'}};
+const FLD_LBL={EN:{AGL:'AGL',QFE:'H QFE',DTK:'DTK',TRK:'TRK',GS:'GS',ETE:'ETE',DIS:'DIS',BRG:'BRG',ALT:'ALT',ETA:'ETA',XTK:'XTK',TKE:'TKE',VSR:'VSR',MSA:'MSA',DEST:'ETA DEST',DDIS:'DIS DEST',FUEL:'FUEL',UTC:'UTC',LCL:'LCL',TMR:'TIMER',BDR:'BORDER',WPT:'WPT'},
+  RU:{AGL:'Hист',QFE:'Hотн',DTK:'ЗМПУ',TRK:'ФМПУ',GS:'W',ETE:'t',DIS:'S',BRG:'ПЕЛ',ALT:'H',ETA:'ПРИБ',XTK:'ЛБУ',TKE:'ΔПУ',VSR:'Vy ТРЕБ',MSA:'Hбез',DEST:'ПРИБ КОН',DDIS:'S КОН',FUEL:'ТОПЛ',UTC:'UTC',LCL:'МЕСТН',TMR:'СЕКУНД',BDR:'ГРАНИЦА',WPT:'ППМ'}};
 const FLD_KEYS=Object.keys(FLD_LBL.EN);
 if(!Array.isArray(CFG.fields)||CFG.fields.length!==8) CFG.fields=['DTK','TRK','GS','ETE','DIS','BRG','ALT','ETA'];
 const CDI_SC={NM:[0.3,1,2,5].map(x=>x*M_NM),km:[0.5,2,4,10].map(x=>x*1000)};
@@ -2795,6 +2809,8 @@ function fieldVal(k){
     case 'DIS': if(n.dist!=null) val=sm(fmtDistN(n.dist),ul(CFG.dist)); break;
     case 'BRG': if(n.brg!=null) val=fmtBrg(n.brg-v); break;
     case 'ALT': if(p&&p.alt!=null) val=sm(fmtAltN(p.alt),ul(CFG.alt)); break;
+    case 'AGL': if(p&&p.alt!=null){ const te=terrAt(p); if(te!=null){ const h=p.alt-te; val=sm(fmtAltN(h),ul(CFG.alt)); if(h<60) cls='red'; else if(h<150) cls='amb'; } } break;
+    case 'QFE': { const h=hQfe(p); if(h!=null) val=sm(fmtAltN(h),ul(CFG.alt)); } break;
     case 'ETA': if(n.eta) val=fmtClock(n.eta); break;
     case 'XTK': if(n.xte!=null){ val=sm(fmtDistN(Math.abs(n.xte)),(n.xte>=0?(lr?'П':'R'):(lr?'Л':'L'))); if(Math.abs(n.xte)>cdiM()) cls='amb'; } break;
     case 'TKE': if(n.dtk!=null&&FLY.trk!=null&&p){ const d=((FLY.trk-n.dtk)+540)%360-180; val=fmtSigned(d); if(Math.abs(d)>10) cls='amb'; } break;
@@ -3064,7 +3080,7 @@ function renderLayerMenu(){ const s=CFG.libShow, LSY={ad:'ADM',small:'APT',nav:'
   const o=CFG.ovl||{};
   $('#layerMenu').innerHTML=LGROUPS.map(([g,gn])=>`<div class="lm-h">${t(gn)}</div>`+Object.entries(LAYERS).filter(([k,d])=>d.g===g).map(([k,d])=>`<button data-act="setLayer" data-k="${k}" aria-pressed="${CFG.layer===k}">${esc(d.name)}${d.fb?`<small class="lm-fb">${t('Backup: {b}',{b:d.fb.map(x=>LAYERS[x].name).join(', ')})}</small>`:''}</button>`).join('')).join('')
   +`<div class="lm-h">${t('Overlays')}</div>`+Object.entries(OVL).map(([k,d])=>`<label><input type="checkbox" data-on="ovl" data-k="${k}" ${o[k]?'checked':''}> ${t(d.name)}</label>`).join('')
-  +`<div class="lm-h">${t('Reference layers')}</div>${ck('ad','Aerodromes')}${ck('small','Small airfields & heliports')}${ck('nav','Navaids')}${ck('wpt','Reporting points & waypoints')}${ck('hel','Helipads')}${ck('oth','Settlements, peaks & objects')}${ck('asp','Airspace')}${ck('rwy','Runways')}${ck('proc','SID / STAR')}${ck('brd','Border of Uzbekistan')}`.replace(/(<div class="lm-h">[^<]*<\/div>)(<label class="lchip">.*)$/,'$1<div class="lchips">$2</div>'); }
+  +`<div class="lm-h">${t('Reference layers')}</div>${ck('ad','Aerodromes')}${ck('small','Small airfields & heliports')}${ck('nav','Navaids')}${ck('wpt','Reporting points & waypoints')}${ck('hel','Helipads')}${ck('oth','Settlements, peaks & objects')}${ck('asp','Airspace')}${ck('rwy','Runways')}${ck('proc','Procedures & circuits')}${ck('brd','Border of Uzbekistan')}`.replace(/(<div class="lm-h">[^<]*<\/div>)(<label class="lchip">.*)$/,'$1<div class="lchips">$2</div>'); }
 function lsIco(k){ const x={ZONE:'<path d="M-8 -6 7 -8 9 6 -6 8Z" fill="none" stroke="#2E75B6" stroke-width="2" stroke-linejoin="round"/>',RWY:'<rect x="-2.2" y="-9" width="4.4" height="18" fill="#5a6b80" transform="rotate(35)"/>',PROC:'<path d="M-9 6 -2 -1 3 3 9 -6" fill="none" stroke="#2E75B6" stroke-width="2" stroke-dasharray="3 2"/>',BRD:'<path d="M-10 4c4-6 7 2 10-3s6-4 10-1" fill="none" stroke="#E0201B" stroke-opacity=".5" stroke-width="4"/><path d="M-10 4c4-6 7 2 10-3s6-4 10-1" fill="none" stroke="#000" stroke-width="1.2" stroke-dasharray="3 2"/>'}[k]; return x?`<svg viewBox="-12 -12 24 24" width="20" height="20">${x}</svg>`:symSvg(k); }
 function updFab(){ $('#fabFollow').classList.toggle('on',!!(FLY.follow&&FLY.pos)); $('#fabMeasure').classList.toggle('on',!!(MODE&&MODE.type==='measure')); }
 const isPhone=()=>innerWidth<900;
@@ -3097,6 +3113,139 @@ if(MS.track.length) drawTrack();
 const autoUpd=()=>{ if(!LIB.checked||Date.now()-LIB.checked>12*3600e3) checkUpdates(false); }; setTimeout(autoUpd,4000); setInterval(autoUpd,30*60e3); window.addEventListener('online',()=>setTimeout(autoUpd,3000));
 setInterval(()=>{ renderStatus(); renderTabs(); if(VIEW.tab==='fly') updFlyLive(); },5000);
 window.FMN={parseCoord,inverse,direct,intersect,xtrack,windTri,routeLegs,routeTrack,turnAngle,importCSV,importOpenAir,parseAipZone,readPackage,makePackage,appWithData,fmtLL,MS:()=>MS,LIB:()=>LIB,ACT,FLY,CFG,t,VIEW:()=>VIEW};
+
+/* ============ height above terrain (true altitude) and above the aerodrome (QFE) ============ */
+const TERR={map:new Map(),busy:false,lastT:0,cur:null,dl:false};
+(function(){ try{ const o=JSON.parse(localStorage.getItem('fmn.terr.v1')||'{}'); Object.keys(o).forEach(k=>TERR.map.set(k,o[k])); }catch(e){} })();
+const TSTEP=0.01;
+function terrSave(){ try{ const o={}; let n=0; for(const [k,v] of TERR.map){ o[k]=v; if(++n>80000) break; } localStorage.setItem('fmn.terr.v1',JSON.stringify(o)); }catch(e){ toast(t('Not enough storage for more terrain data.')); } }
+function terrGrid(lat,lon){ const i=Math.floor(lat/TSTEP), j=Math.floor(lon/TSTEP), fy=lat/TSTEP-i, fx=lon/TSTEP-j, g=(a,b)=>TERR.map.get(a+':'+b);
+  const v00=g(i,j),v01=g(i,j+1),v10=g(i+1,j),v11=g(i+1,j+1); if(v00==null||v01==null||v10==null||v11==null) return null;
+  return v00*(1-fx)*(1-fy)+v01*fx*(1-fy)+v10*(1-fx)*fy+v11*fx*fy; }
+async function terrFetch(p){ const now=Date.now(); if(TERR.busy||now-TERR.lastT<4000||!navigator.onLine) return; TERR.busy=true; TERR.lastT=now;
+  try{ const r=await fetchElevations([[p.lat,p.lon]]); if(r[0]!=null) TERR.cur={lat:p.lat,lon:p.lon,e:r[0]}; }catch(e){} TERR.busy=false; }
+/* terrain elevation under a position: fresh online value nearby, else the downloaded grid */
+function terrAt(p){ if(!p) return null; const c=TERR.cur, d=c?inverse(c.lat,c.lon,p.lat,p.lon).dist:1e9;
+  if(d>250) terrFetch(p); if(d<400) return c.e; const g=terrGrid(p.lat,p.lon); if(g!=null) return g; return d<1500?c.e:null; }
+function altm(){ CFG.altm=Object.assign({ad:'',qfe:'',u:'mm',temp:''},CFG.altm||{}); return CFG.altm; }
+function altmAd(){ const c=altm(); let a=c.ad?AD(c.ad):null; if(!a){ const r=Rt(FLY.routeId), p0=r&&routePts(r)[0]; if(p0&&isAD(p0)) a=p0; }
+  if(!a&&FLY.pos){ const n=nearestAds(FLY.pos,1)[0]; a=n?n.a:null; } return a; }
+const qfeHpa=()=>{ const c=altm(), v=num(c.qfe); if(v==null) return null; return c.u==='hpa'?v:v*1.333224; };
+/* height above the aerodrome. With the aerodrome temperature the value is what a QFE altimeter reads (temperature error included). */
+function hQfe(p){ const a=altmAd(); if(!p||p.alt==null||!a||a.elev==null) return null; const hg=p.alt-a.elev, c=altm(), tc=num(c.temp);
+  if(tc==null) return hg; const tIsa=288.15-0.0065*a.elev; return hg*tIsa/(tc+273.15); }
+function qnhFromQfe(){ const a=altmAd(), q=qfeHpa(); if(q==null||!a||a.elev==null) return null; return q/Math.pow(1-0.0065*a.elev/288.15,5.25588); }
+function vAltim(){ const c=altm(), a=altmAd(), p=FLY.pos, qnh=qnhFromQfe(), te=p?terrAt(p):null;
+  const ads=LIB.ads.filter(x=>x.type==='AD'&&(x.cc==='UZ'||isVis(x))).sort((x,y)=>x.name.localeCompare(y.name));
+  return `<h3>${t('Altimeter')}</h3>
+  <div class="grid2"><label class="f"><span>${t('Aerodrome (QFE)')}</span><select data-on="altm" data-k="ad"><option value="">${t('Auto: departure or nearest')}</option>${ads.map(x=>`<option value="${x.id}"${c.ad===x.id?' selected':''}>${esc(x.name)} ${esc(x.ofpName||x.full||'')}</option>`).join('')}</select></label>
+  <label class="f"><span>${t('Aerodrome elevation')}</span><input class="num" value="${a&&a.elev!=null?fmtAltN(a.elev):'—'}" disabled></label></div>
+  <div class="grid3"><label class="f"><span>QFE</span><input class="num" data-on="altm" data-k="qfe" inputmode="decimal" value="${esc(c.qfe)}" placeholder="${c.u==='hpa'?'1013':'760'}"></label>
+  <label class="f"><span>${t('Units')}</span><select data-on="altm" data-k="u"><option value="mm"${c.u!=='hpa'?' selected':''}>${t('mm Hg')}</option><option value="hpa"${c.u==='hpa'?' selected':''}>hPa</option></select></label>
+  <label class="f"><span>${t('Temperature °C')}</span><input class="num" data-on="altm" data-k="temp" inputmode="decimal" value="${esc(c.temp)}" placeholder="15"></label></div>
+  <dl class="kv"><dt>${t('Height above aerodrome (QFE)')}</dt><dd id="alt-q">—</dd><dt>${t('True altitude above terrain')}</dt><dd id="alt-t">—</dd><dt>${t('Terrain elevation here')}</dt><dd id="alt-e">${te!=null?fmtAlt(te):'—'}</dd>
+  ${qnh!=null?`<dt>QNH</dt><dd>${Math.round(qnh)} hPa · ${Math.round(qnh/1.333224)} ${t('mm Hg')}</dd>`:''}</dl>
+  <div class="actions" style="margin-top:6px"><button class="btn" data-act="terrDl">${t('Download terrain for map area')}</button></div>
+  <p class="note">${t('Heights come from GPS: a phone cannot read the aircraft static pressure. Enter the aerodrome QFE and temperature to get QNH and the reading of an altimeter set to QFE (temperature error included). True altitude uses a 90 m terrain model; download it for the flight area before flying without internet ({n} points saved).',{n:TERR.map.size})}</p>`; }
+function updAltim(){ const q=$('#alt-q'); if(!q) return; const p=FLY.pos, h=hQfe(p), te=p?terrAt(p):null;
+  q.textContent=h!=null?fmtAlt(h):(p?t('set aerodrome'):'—'); $('#alt-t').textContent=(p&&p.alt!=null&&te!=null)?fmtAlt(p.alt-te):'—'; $('#alt-e').textContent=te!=null?fmtAlt(te):'—'; }
+setInterval(()=>{ try{ updAltim(); }catch(e){} },1000);
+Object.assign(ON,{ altm:el=>{ altm()[el.dataset.k]=el.value; saveCfg(); updHud(); if(el.tagName==='SELECT') renderPanel(); else updAltim(); } });
+Object.assign(ACT,{
+  terrDl:async()=>{ if(TERR.dl) return; if(!navigator.onLine){ toast(t('Connect to the internet to download terrain.')); return; }
+    const b=map.getBounds(), i0=Math.floor(b.getSouth()/TSTEP), i1=Math.ceil(b.getNorth()/TSTEP), j0=Math.floor(b.getWest()/TSTEP), j1=Math.ceil(b.getEast()/TSTEP);
+    const pts=[]; for(let i=i0;i<=i1;i++) for(let j=j0;j<=j1;j++) if(!TERR.map.has(i+':'+j)) pts.push([i,j]);
+    if((i1-i0+1)*(j1-j0+1)>12000){ toast(t('Zoom in: the map area is too large (max about 100 × 100 km at a time).')); return; }
+    if(!pts.length){ toast(t('Terrain for this area is already saved.')); return; }
+    TERR.dl=true; let done=0;
+    for(let k=0;k<pts.length;k+=100){ const ch=pts.slice(k,k+100); const r=await fetchElevations(ch.map(([i,j])=>[i*TSTEP,j*TSTEP]));
+      r.forEach((e,n)=>{ if(e!=null) TERR.map.set(ch[n][0]+':'+ch[n][1],Math.round(e)); }); done+=ch.length; toast(t('Terrain: {a} of {b}',{a:done,b:pts.length})); }
+    TERR.dl=false; terrSave(); toast(t('Terrain saved for this area ({n} points).',{n:pts.length})); renderPanel(); },
+  helGrp:()=>{ CFG.libShow.hel=CFG.libShow.hel===false; saveCfg(); renderLib(); renderPanel(); toast(CFG.libShow.hel!==false?t('Helipads shown'):t('Helipads hidden')); },
+  procGen:d=>{ const dr=VIEW.draft, p=dr&&dr.procs[+d.i]; if(!p) return; const r=genProc(dr,p); if(!r){ toast(t('Enter the runway with its heading (and thresholds) first.')); return; }
+    p._txt=r; renderPanel(); toast(t('Fixes built — check them and save the aerodrome.')); }
+});
+
+/* ============ aerodrome procedures: circuits, boxes, straight-in, calculated angle ============ */
+const PROC_T=['CIRC','SBOX','BBOX','STR','CALC','HOLD','MAPP','APP','SID','STAR'];
+const PROC_N={CIRC:'Circuit',SBOX:'Small box',BBOX:'Big box',STR:'Straight-in approach',CALC:'Approach with calculated angle',HOLD:'Holding',MAPP:'Missed approach',APP:'Approach',SID:'SID',STAR:'STAR'};
+const PROC_GEN=new Set(['CIRC','SBOX','BBOX','STR','CALC']);
+const PROC_DEF={CIRC:{w:4,up:4,fin:6},SBOX:{w:3,up:3,fin:5},BBOX:{w:6,up:6,fin:10},STR:{fin:20,faf:10},CALC:{ang:20,out:12,fin:10}};
+function procName(k){ return t(PROC_N[k]||k); }
+function procGenDefaults(p){ p.gen=Object.assign({end:'',side:'L',alt:''},PROC_DEF[p.type]||{},p.gen||{}); return p.gen; }
+function rwyEndsLL(d){ const out=[]; (d.rwys||[]).forEach(w=>{ const e=rwyEnds(d,w); if(!e) return; const len=w.len||(w.lat1!=null&&w.lat2!=null?inverse(w.lat1,w.lon1,w.lat2,w.lon2).dist:2500);
+    let T1=w.lat1!=null?{lat:w.lat1,lon:w.lon1}:null, T2=w.lat2!=null?{lat:w.lat2,lon:w.lon2}:null;
+    if(!T1||!T2){ if(d.lat==null) return; T1=direct(d.lat,d.lon,n360(e[0].ik+180),len/2); T2=direct(d.lat,d.lon,e[0].ik,len/2); }
+    out.push({des:e[0].des,thr:T1,far:T2,crs:e[0].ik,len},{des:e[1].des,thr:T2,far:T1,crs:e[1].ik,len}); }); return out; }
+function genProc(d,p){ const g=procGenDefaults(p), ends=rwyEndsLL(d); if(!ends.length) return null; const E=ends.find(x=>x.des===g.end)||ends[0];
+  const C=E.crs, sideD=g.side==='R'?n360(C+90):n360(C-90), km=x=>(+x||0)*1000, ru=CFG.lang==='ru', alt=g.alt?String(g.alt):'';
+  const D=(pt,az,dist)=>{ const q=direct(pt.lat,pt.lon,n360(az),dist); return {lat:q.lat,lon:q.lon}; };
+  const ln=(name,pt,a)=>[name,fmtLL(pt.lat,pt.lon,'DMS'),a||''].filter(Boolean).join(' ; ');
+  const rw=(ru?'ВПП ':'RWY ')+E.des, TN=n=>ru?`${n} разв.`:`T${n}`; const L=[];
+  if(p.type==='STR'){ L.push(ln(ru?'ВХОД':'ENTRY',D(E.thr,C+180,km(g.fin)),alt),ln('FAF',D(E.thr,C+180,km(g.faf)),alt),ln(rw,E.thr)); }
+  else if(p.type==='CALC'){ const st=LIB.points.filter(x=>x.ad===d.id&&isNav(x)).sort((x,y)=>inverse(x.lat,x.lon,E.thr.lat,E.thr.lon).dist-inverse(y.lat,y.lon,E.thr.lat,E.thr.lon).dist)[0]||{name:ru?'КТА':'ARP',lat:d.lat,lon:d.lon};
+    const out=n360(C+180+(g.side==='R'?-1:1)*(+g.ang||20)), O=D(st,out,km(g.out)), F=D(E.thr,C+180,km(g.fin));
+    L.push(ln(st.name,st,alt),ln(ru?'НАЧ. РАЗВ.':'TURN',O,alt),ln(ru?'ВЫХОД НА ПОС.':'FINAL',F),ln(rw,E.thr)); }
+  else { const T1=D(E.far,C,km(g.up)), T2=D(T1,sideD,km(g.w)), F=D(E.thr,C+180,km(g.fin)), T3=D(F,sideD,km(g.w));
+    L.push(ln(rw,E.thr),ln(TN(1),T1,alt),ln(TN(2),T2,alt),ln(TN(3),T3,alt),ln(TN(4),F,alt),ln(rw,E.thr)); }
+  return L.join('\n'); }
+/* radial / distance from a navaid of the aerodrome: "R278 D18.9" (km; add "NM" for nautical miles; optional station name), or a runway threshold "RWY 24" */
+function fixRef(s,a){ s=(s||'').trim(); let m=/^R\s*(\d{1,3}(?:\.\d+)?)\s*°?\s*[\/ ]?\s*D\s*(\d+(?:\.\d+)?)\s*(nm|км|km)?(?:\s+(?:from\s+|от\s+)?(\S+))?$/i.exec(s);
+  if(m){ let st=null; if(m[4]) st=allPts().filter(p=>p.name.toUpperCase()===m[4].toUpperCase()).sort((x,y)=>inverse(a.lat,a.lon,x.lat,x.lon).dist-inverse(a.lat,a.lon,y.lat,y.lon).dist)[0];
+    if(!st){ const pr=['VORDME','VOR','DME','TACAN','RSBN','NDB','LOM']; st=LIB.points.filter(p=>p.ad===a.id&&isNav(p)).sort((x,y)=>pr.indexOf(x.type)-pr.indexOf(y.type))[0]||a; }
+    const v=st===a?adVar(a):stVar(st), dist=/nm/i.test(m[3]||'')?+m[2]*1852:+m[2]*1000, q=direct(st.lat,st.lon,n360(+m[1]+v),dist); return {lat:q.lat,lon:q.lon}; }
+  m=/^(?:RWY|ВПП)\s*(\S+)$/i.exec(s); if(m){ const e=rwyEndsLL(a).find(x=>x.des.toUpperCase()===m[1].toUpperCase()); if(e) return {lat:e.thr.lat,lon:e.thr.lon}; }
+  return null; }
+/* rounded turns: the path flies a radius R = V²/(g·tan bank) through every turn, as drawn on approach charts */
+function procPath(fx,R){ if(fx.length<3||!R) return fx.map(f=>[f.lat,f.lon]); const out=[[fx[0].lat,fx[0].lon]];
+  for(let i=1;i<fx.length-1;i++){ const A=fx[i-1],B=fx[i],C=fx[i+1], k=Math.cos(B.lat*Math.PI/180), M=111320;
+    const xy=p=>[(p.lon-B.lon)*M*k,(p.lat-B.lat)*M], ll=q=>[B.lat+q[1]/M,B.lon+q[0]/(M*k)];
+    const a=xy(A),c=xy(C),la=Math.hypot(a[0],a[1]),lc=Math.hypot(c[0],c[1]); if(la<1||lc<1){ out.push([B.lat,B.lon]); continue; }
+    const ua=[a[0]/la,a[1]/la],uc=[c[0]/lc,c[1]/lc], th=Math.acos(Math.max(-1,Math.min(1,ua[0]*uc[0]+ua[1]*uc[1])));
+    if(th>Math.PI-0.04||th<0.02){ out.push([B.lat,B.lon]); continue; }
+    let tl=R/Math.tan(th/2); const tm=Math.min(la,lc)*0.48; if(tl>tm) tl=tm; const r=tl*Math.tan(th/2);
+    const Ta=[ua[0]*tl,ua[1]*tl],Tc=[uc[0]*tl,uc[1]*tl],bs=[ua[0]+uc[0],ua[1]+uc[1]],lb=Math.hypot(bs[0],bs[1]),dO=r/Math.sin(th/2),O=[bs[0]/lb*dO,bs[1]/lb*dO];
+    const a0=Math.atan2(Ta[1]-O[1],Ta[0]-O[0]); let da=Math.atan2(Tc[1]-O[1],Tc[0]-O[0])-a0; while(da>Math.PI) da-=2*Math.PI; while(da<-Math.PI) da+=2*Math.PI;
+    const n=Math.max(4,Math.ceil(Math.abs(da)/0.1)); for(let s=0;s<=n;s++){ const g=a0+da*s/n; out.push(ll([O[0]+r*Math.cos(g),O[1]+r*Math.sin(g)])); } }
+  out.push([fx[fx.length-1].lat,fx[fx.length-1].lon]); return out; }
+const procR=p=>{ const v=(+p.spd||300)/3.6, b=(+p.bank||30)*Math.PI/180; return v*v/(9.81*Math.tan(b)); };
+function legLblHtml(A,B,crs,dist,dim){ const pa=map.latLngToLayerPoint([A.lat,A.lon]), pb=map.latLngToLayerPoint([B.lat,B.lon]), dx=pb.x-pa.x, dy=pb.y-pa.y, px=Math.hypot(dx,dy);
+  if(px<60) return null; const ang=Math.atan2(dy,dx)*180/Math.PI, flip=Math.abs(ang)>90, rot=flip?ang+180:ang, c=fmtBrg(crs), dT=fmtDistN(dist);
+  const cc=`<b class="c">${flip?'←'+c:c+'→'}</b>`, dd=`<b class="d">${dT}</b>`;
+  return `<span class="leg-in${dim?' dim':''}" style="transform:rotate(${rot.toFixed(1)}deg) translate(-50%,-50%)">${flip?cc+dd:dd+cc}</span>`; }
+function drawProc(a,pr){ const fx=pr.fixes.filter(f=>f.lat!=null); if(fx.length<2) return; const gen=PROC_GEN.has(pr.type)||pr.type==='HOLD'||pr.type==='MAPP';
+  const path=gen&&pr.round!==false?procPath(fx,procR(pr)):fx.map(f=>[f.lat,f.lon]);
+  gProc.addLayer(L.polyline(path,{className:'proc-case',weight:4.5,interactive:false}));
+  gProc.addLayer(L.polyline(path,{className:'proc proc-'+pr.type,weight:2.2,interactive:false}));
+  if(map.getZoom()<10) return; const v=dV(adVar(a));
+  for(let i=1;i<fx.length;i++){ const A=fx[i-1],B=fx[i]; if(A.lat===B.lat&&A.lon===B.lon) continue; const iv=inverse(A.lat,A.lon,B.lat,B.lon), m=interp(A.lat,A.lon,B.lat,B.lon,.5), h=legLblHtml(A,B,n360(iv.az1-v),iv.dist,false);
+    if(h) gProc.addLayer(L.marker([m.lat,m.lon],{interactive:false,icon:lblIcon(h)})); }
+  const seen=new Set(); fx.forEach(f=>{ const k=f.lat.toFixed(5)+f.lon.toFixed(5); if(seen.has(k)) return; seen.add(k);
+    gProc.addLayer(L.marker([f.lat,f.lon],{interactive:false,icon:lblIcon(`<span class="pfx"><i></i><b>${esc(f.name)}</b>${f.alt?`<small>${esc(f.alt)}</small>`:''}</span>`)})); });
+  const f0=(q=>({lat:q[0],lon:q[1]}))(path[Math.floor(path.length*(gen?0.3:0.5))]); gProc.addLayer(L.marker([f0.lat,f0.lon],{interactive:false,icon:lblIcon(`<span class="ptag">${esc(procName(pr.type))}${pr.name?' '+esc(pr.name):''}</span>`)})); }
+function vProcEdit(d,p,i){ if(!PROC_GEN.has(p.type)) return ''; const g=procGenDefaults(p), ends=rwyEndsLL(d), inp=(k,v,ph)=>`<input class="num" data-on="ade" data-p="procs.${i}.gen.${k}" inputmode="decimal" value="${v==null?'':esc(String(v))}" placeholder="${ph||''}">`;
+  const f=(k,l,ph)=>`<label class="f"><span>${t(l)}</span>${inp(k,g[k],ph)}</label>`;
+  const extra=p.type==='STR'?f('fin','Entry point from threshold (km)')+f('faf','FAF from threshold (km)'):p.type==='CALC'?f('ang','Calculated angle (°)')+f('out','Outbound leg (km)')+f('fin','Final from threshold (km)'):f('w','Distance downwind to runway (km)')+f('up','1st turn after runway end (km)')+f('fin','4th turn from threshold (km)');
+  return `<div class="pgen"><div class="lm-h">${t('Build by reference points')}</div>
+  <div class="grid3"><label class="f"><span>${t('Landing RWY')}</span><select data-on="ade" data-p="procs.${i}.gen.end">${ends.map(e=>`<option${g.end===e.des?' selected':''}>${esc(e.des)}</option>`).join('')||`<option value="">${t('add a runway')}</option>`}</select></label>
+  <label class="f"><span>${t('Turns')}</span><select data-on="ade" data-p="procs.${i}.gen.side"><option value="L"${g.side!=='R'?' selected':''}>${t('Left')}</option><option value="R"${g.side==='R'?' selected':''}>${t('Right')}</option></select></label>${f('alt','Altitude','600 m')}</div>
+  <div class="grid3">${extra}</div><div class="actions"><button class="btn" data-act="procGen" data-i="${i}">${t('Build fixes')}</button></div></div>`; }
+Object.assign(RU,{'Altimeter':'Высотомер','Aerodrome (QFE)':'Аэродром (QFE)','Auto: departure or nearest':'Авто: вылета или ближайший','Aerodrome elevation':'Превышение аэродрома','Units':'Единицы','mm Hg':'мм рт. ст.','Temperature °C':'Температура °C',
+'Height above aerodrome (QFE)':'Высота над аэродромом (QFE)','True altitude above terrain':'Истинная высота над рельефом','Terrain elevation here':'Высота рельефа под ВС','Download terrain for map area':'Загрузить рельеф для района карты','set aerodrome':'выберите аэродром',
+'Heights come from GPS: a phone cannot read the aircraft static pressure. Enter the aerodrome QFE and temperature to get QNH and the reading of an altimeter set to QFE (temperature error included). True altitude uses a 90 m terrain model; download it for the flight area before flying without internet ({n} points saved).':'Высоты рассчитываются по GPS: телефон не может измерить статическое давление ВС. Введите давление аэродрома (QFE) и температуру — будут показаны QNH и показания высотомера, установленного на QFE (с учётом температурной поправки). Истинная высота считается по модели рельефа 90 м; перед полётом без интернета загрузите рельеф района ({n} точек сохранено).',
+'Not enough storage for more terrain data.':'Недостаточно памяти для данных рельефа.','Connect to the internet to download terrain.':'Подключитесь к интернету, чтобы загрузить рельеф.','Zoom in: the map area is too large (max about 100 × 100 km at a time).':'Увеличьте масштаб: район слишком большой (не более ~100 × 100 км за раз).',
+'Terrain for this area is already saved.':'Рельеф этого района уже сохранён.','Terrain: {a} of {b}':'Рельеф: {a} из {b}','Terrain saved for this area ({n} points).':'Рельеф района сохранён ({n} точек).','Helipads shown':'Вертолётные площадки показаны','Helipads hidden':'Вертолётные площадки скрыты',
+'Enter the runway with its heading (and thresholds) first.':'Сначала введите ВПП с курсом (и порогами).','Fixes built — check them and save the aerodrome.':'Точки построены — проверьте и сохраните аэродром.',
+'Circuit':'Полёт по кругу','Small box':'Малая коробочка','Big box':'Большая коробочка','Straight-in approach':'Заход с прямой','Approach with calculated angle':'Заход с расчётным углом','Holding':'Схема ожидания','Missed approach':'Уход на второй круг','Approach':'Заход на посадку',
+'Build by reference points':'Построить по опорным точкам','Landing RWY':'ВПП посадки','Turns':'Развороты','Left':'Левые','Right':'Правые','Altitude':'Высота','Build fixes':'Построить точки',
+'Entry point from threshold (km)':'Точка входа от порога (км)','FAF from threshold (km)':'ТВГ от порога (км)','Calculated angle (°)':'Расчётный угол (°)','Outbound leg (km)':'Удаление по отходу (км)','Final from threshold (km)':'Выход на посадочный от порога (км)',
+'Distance downwind to runway (km)':'Расстояние от ВПП до третьего участка (км)','1st turn after runway end (km)':'1-й разворот за торцом ВПП (км)','4th turn from threshold (km)':'4-й разворот от порога (км)',
+'Turn speed (km/h)':'Скорость на разворотах (км/ч)','Bank (°)':'Крен (°)','Helipads':'Вертолётные площадки','Procedures & circuits':'Схемы захода и круга','Show group':'Показать группу','Hide group':'Скрыть группу','{n} helipads':'Площадок: {n}',
+'Fixes in order — name ; coordinates or R278 D18.9 or RWY 24 ; altitude':'Точки по порядку — название ; координаты, или R278 D18.9, или ВПП 24 ; высота'});
+
+function helGroup(){ const n=LIB.points.filter(p=>HELT.has(p.type)).length; if(!n||VIEW.pf==='mine'||VIEW.pf==='nav') return ''; const on=CFG.libShow.hel!==false;
+  return `<ul class="list"><li class="crow hgrp"><button class="row" data-act="pf" data-k="${VIEW.pf==='hel'?'all':'hel'}"><span class="sym">${symSvg('MHP')}</span><span class="row-main"><b>${t('Helipads')}</b><small>${t('{n} helipads',{n})} · ${on?t('shown on the map'):t('hidden on the map')}</small></span><span class="row-side">${VIEW.pf==='hel'?'▴':'▾'}</span></button><button class="btn sm${on?'':' primary'}" data-act="helGrp" style="margin:auto 0 auto 6px">${on?t('Hide group'):t('Show group')}</button></li></ul>`; }
+Object.assign(RU,{'shown on the map':'показаны на карте','hidden on the map':'скрыты на карте'});
 </script>
 </body>
 </html>
