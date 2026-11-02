@@ -712,6 +712,10 @@ table.tafd td{white-space:normal;vertical-align:top}table.tafd td.mono{font-size
 #layerMenu button{text-transform:none!important;font-weight:500!important}
 .btn,.gk{font-weight:500!important;text-transform:none!important}
 .leg-in .c,.leg-by .c{color:#A0008F}
+.gn-t td{white-space:nowrap}.gn-sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.gn-plots{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:12px;align-items:center;margin-top:10px}
+#gnSky{width:100%;max-width:300px;aspect-ratio:1;display:block}#gnBars{width:100%;height:150px;display:block}
+@media (max-width:620px){.gn-plots{grid-template-columns:1fr}#gnSky{margin:0 auto}}
 table.fct td small{color:var(--muted)}
 </style>
 </head>
@@ -4212,6 +4216,76 @@ Object.assign(RU,{'Foreign aerodromes (all {n}, one group)':'Зарубежны�
  'thunderstorm':'гроза','showers':'ливневый','freezing':'переохлаждённый','rain':'дождь','snow':'снег','drizzle':'морось','fog':'туман','mist':'дымка','haze':'мгла','dust':'пыль','sand':'песок','hail':'град','small hail':'крупа','ice pellets':'ледяной дождь','squall':'шквал','funnel cloud':'смерч','duststorm':'пыльная буря','sandstorm':'песчаная буря','blowing':'поземок/метель','low drifting':'позёмок','shallow':'поземный','patches':'клочья','unknown precip.':'неизв. осадки','smoke':'дым','snow grains':'снежные зёрна','ice crystals':'ледяные иглы','dust whirls':'пыльные вихри'});
 
 if(!CFG.v8){ CFG.v8=1; if(CFG.mapNight==='navy') CFG.mapNight='dim'; saveCfg(); }
+
+/* ========================================================================== */
+/*  GNSS: position straight from the phone's satellite receiver (GPS, GLONASS, BeiDou, Galileo, QZSS, NavIC), */
+/*  no Wi-Fi / cell positioning; satellite status screen (Android app)                                         */
+/* ========================================================================== */
+const GN={on:false,sats:[],hw:'',fixT:0,stT:0,last:null,err:'',subs:[],src:''};
+const gnssPlug=()=>{ const C=window.Capacitor; return C&&C.isNativePlatform&&C.isNativePlatform()&&C.Plugins&&C.Plugins.Gnss?C.Plugins.Gnss:null; };
+const useRaw=()=>!!gnssPlug()&&CFG.gnssRaw!==false;
+async function gnssStop(){ const P=gnssPlug(); const subs=GN.subs; GN.subs=[]; for(const s of subs){ try{ await s.remove(); }catch(e){} } if(P&&GN.on){ try{ await P.stop(); }catch(e){} } GN.on=false; }
+async function gnssStart(){ const P=gnssPlug(); if(!P) return false;
+  try{ await gnssStop(); GN.subs.push(await P.addListener('fix',gnssFix)); GN.subs.push(await P.addListener('status',d=>{ GN.sats=(d&&d.sats)||[]; GN.stT=Date.now(); satUpd(); }));
+    GN.subs.push(await P.addListener('state',d=>{ if(d&&d.disabled) toast(t('Satellite positioning was switched off in the phone settings'),true); }));
+    const r=await P.start(); GN.on=true; GN.hw=r&&r.hw?r.hw+(r.year?' · '+r.year:''):''; GN.err=''; GN.src='gnss'; return true; }
+  catch(e){ GN.err=String(e.message||e); await gnssStop(); return false; } }
+function gnssFix(d){ if(!d||d.lat==null) return; GN.last=d; GN.fixT=Date.now();
+  /* onGpsFix adds the manual geoid correction; Android 14+ already gives height above mean sea level */
+  const alt=d.msl!=null?d.msl-(+CFG.altCorr||0):(d.alt!=null?d.alt:null);
+  onGpsFix({coords:{latitude:d.lat,longitude:d.lon,altitude:alt,accuracy:d.acc!=null?d.acc:999,altitudeAccuracy:d.vacc!=null?d.vacc:null,heading:d.brg!=null?d.brg:null,speed:d.spd!=null?d.spd:null},timestamp:d.t||Date.now()}); satUpd(); }
+const _gpsWatch=gpsWatch; gpsWatch=function(){ if(useRaw()){ FLY.watchT=Date.now(); if(FLY.watch!=null){ try{ navigator.geolocation.clearWatch(FLY.watch); }catch(e){} FLY.watch=null; }
+    gnssStart().then(ok=>{ if(!ok&&FLY.gps){ GN.src='web'; toast(t('Satellite receiver not available ({e}) — standard location is used',{e:GN.err}),true); _gpsWatch(); } }); return; }
+  GN.src='web'; _gpsWatch(); };
+const _stopGPS=stopGPS; stopGPS=function(){ gnssStop(); GN.sats=[]; _stopGPS(); };
+/* satellite status screen */
+const GNC={1:['GPS','G','#1F6FD1','USA'],2:['SBAS','S','#607D8B',''],3:['GLONASS','R','#E0201B','Russia'],4:['QZSS','J','#9C27B0','Japan'],5:['BeiDou','C','#D99A00','China'],6:['Galileo','E','#2F9E44','EU'],7:['NavIC','I','#FF7A00','India']};
+const band=f=>f==null?'':(f<1300e6?'L5':'L1');
+function satSummary(){ const m={}; GN.sats.forEach(s=>{ const k=s.c in GNC?s.c:0; const o=m[k]||(m[k]={v:new Set(),u:new Set(),cn:[],l5:new Set()}); const id=s.c+':'+s.id; o.v.add(id); if(s.u) o.u.add(id); if(s.cn0>0) o.cn.push(s.cn0); if(band(s.f)==='L5') o.l5.add(id); });
+  return Object.entries(m).map(([k,o])=>({k:+k,v:o.v.size,u:o.u.size,cn:o.cn.length?o.cn.reduce((a,b)=>a+b,0)/o.cn.length:0,l5:o.l5.size})).sort((a,b)=>b.u-a.u||b.v-a.v); }
+function vSat(){ const P=gnssPlug(), raw=useRaw();
+  if(!P) return `<p class="note">${t('Satellite details are available in the Android app only. iPhone and browsers give the position but do not show satellites; they also use GPS, GLONASS, Galileo and BeiDou automatically when the phone supports them.')}</p>${FLY.pos?`<dl class="kv"><dt>${t('Accuracy')}</dt><dd>±${Math.round(FLY.pos.acc||0)} m</dd></dl>`:''}`;
+  return `<label class="toggle"><input type="checkbox" data-on="gnssRaw" ${CFG.gnssRaw!==false?'checked':''}> ${t('Satellites only (no Wi-Fi / cell positioning)')}</label>
+  <p class="note">${raw?t('Position comes straight from the phone’s satellite receiver: all constellations the chip supports are used together.'):t('Standard Android location (may mix in Wi-Fi and cell towers).')}</p>
+  ${FLY.gps?'':`<div class="actions"><button class="btn primary" data-act="gpsStart">${t('Start GPS')}</button></div>`}
+  <div id="satBody">${satBody()}</div>`; }
+function satBody(){ const L_=GN.last, now=Date.now(), sm=satSummary(), used=GN.sats.filter(s=>s.u).length, l5=GN.sats.filter(s=>band(s.f)==='L5').length;
+  const fixT=!FLY.gps?t('GPS off'):!L_||now-GN.fixT>5000?(GN.src==='web'?t('standard location'):t('searching…')):(used>=4&&L_.alt!=null?'3D':used>=3?'2D':'—');
+  return `<dl class="kv"><dt>${t('Fix')}</dt><dd>${fixT}</dd><dt>${t('Satellites used / visible')}</dt><dd>${used} / ${GN.sats.length}</dd>
+    <dt>${t('Accuracy horizontal / vertical')}</dt><dd>${L_&&L_.acc!=null?'±'+Math.round(L_.acc)+' m':'—'} / ${L_&&L_.vacc!=null?'±'+Math.round(L_.vacc)+' m':'—'}</dd>
+    <dt>${t('Dual frequency (L5 / E5a / B2a)')}</dt><dd>${l5?t('yes, {n} signals',{n:l5}):t('not received')}</dd>
+    <dt>${t('Altitude reference')}</dt><dd>${L_&&L_.msl!=null?t('MSL (Android geoid model)'):t('WGS-84 ellipsoid + correction {c} m',{c:+CFG.altCorr||0})}</dd>
+    ${GN.hw?`<dt>${t('Receiver')}</dt><dd>${esc(GN.hw)}</dd>`:''}</dl>
+  ${sm.length?`<table class="wxt gn-t"><tr><th>${t('System')}</th><th>${t('Used')}</th><th>${t('Visible')}</th><th>C/N0</th><th>L5</th></tr>${sm.map(r=>{ const c=GNC[r.k]||['?','?','#888','']; return `<tr><td><i class="gn-sw" style="background:${c[2]}"></i>${c[0]} <small>${t(c[3])}</small></td><td><b>${r.u}</b></td><td>${r.v}</td><td>${r.cn?Math.round(r.cn)+' dB-Hz':'—'}</td><td>${r.l5||'—'}</td></tr>`; }).join('')}</table>`:`<p class="note">${FLY.gps?t('Waiting for satellite data… Go outside or near a window; the first fix can take up to a minute.'):t('Start GPS to see the satellites.')}</p>`}
+  <div class="gn-plots"><canvas id="gnSky" width="300" height="300"></canvas><canvas id="gnBars" height="150"></canvas></div>
+  <p class="note">${t('Sky plot: centre — overhead, ring — horizon, north up. Filled — used in the position, hollow — visible only. Bars: signal strength C/N0 (above 35 dB-Hz is good).')}</p>`; }
+let satT=0; function satUpd(){ if(VIEW.tab!=='sat') return; const n=Date.now(); if(n-satT<800) return; satT=n; const b=$('#satBody'); if(b){ b.innerHTML=satBody(); satDraw(); } }
+function satDraw(){ const cs=getComputedStyle(document.documentElement), fg=cs.getPropertyValue('--fg').trim()||'#000', mu=cs.getPropertyValue('--muted').trim()||'#888', ln=cs.getPropertyValue('--line').trim()||'#ccc', font=getComputedStyle(document.body).fontFamily;
+  const sky=$('#gnSky'); if(sky){ const dpr=devicePixelRatio||1, W=sky.clientWidth||280; sky.width=W*dpr; sky.height=W*dpr; const g=sky.getContext('2d'); g.scale(dpr,dpr); const cx=W/2, cy=W/2, R=W/2-18;
+    g.strokeStyle=ln; g.lineWidth=1; [1,2/3,1/3].forEach(k=>{ g.beginPath(); g.arc(cx,cy,R*k,0,2*Math.PI); g.stroke(); }); g.beginPath(); g.moveTo(cx-R,cy); g.lineTo(cx+R,cy); g.moveTo(cx,cy-R); g.lineTo(cx,cy+R); g.stroke();
+    g.fillStyle=mu; g.font='600 11px '+font; g.textAlign='center'; g.fillText('N',cx,cy-R-5); g.fillText('S',cx,cy+R+13); g.fillText('E',cx+R+9,cy+4); g.fillText('W',cx-R-9,cy+4); g.fillText('60°',cx+4,cy-R/3+11); g.fillText('30°',cx+4,cy-2*R/3+11);
+    GN.sats.forEach(s=>{ if(s.el==null||s.el<0) return; const r=R*(90-s.el)/90, a=(s.az-90)*Math.PI/180, x=cx+r*Math.cos(a), y=cy+r*Math.sin(a), c=(GNC[s.c]||[,,'#888'])[2];
+      g.beginPath(); g.arc(x,y,7,0,2*Math.PI); if(s.u){ g.fillStyle=c; g.fill(); } else { g.fillStyle='rgba(0,0,0,0)'; } g.lineWidth=2; g.strokeStyle=c; g.stroke();
+      g.fillStyle=fg; g.font='600 9px '+font; g.fillText((GNC[s.c]||[,'?'])[1]+s.id,x,y-10); }); }
+  const bc=$('#gnBars'); if(bc){ const dpr=devicePixelRatio||1, W=bc.clientWidth||300, H=150; bc.width=W*dpr; bc.height=H*dpr; const g=bc.getContext('2d'); g.scale(dpr,dpr);
+    const L_=GN.sats.filter(s=>s.cn0>0).sort((a,b)=>(a.c-b.c)||(a.id-b.id)).slice(0,48), n=Math.max(L_.length,1), bw=Math.min(18,(W-30)/n);
+    g.strokeStyle=ln; [20,35,50].forEach(v=>{ const y=H-18-(H-30)*v/55; g.beginPath(); g.moveTo(26,y); g.lineTo(W,y); g.stroke(); g.fillStyle=mu; g.font='10px '+font; g.textAlign='right'; g.fillText(v,22,y+3); });
+    L_.forEach((s,i)=>{ const c=(GNC[s.c]||[,,'#888'])[2], h=(H-30)*Math.min(55,s.cn0)/55, x=28+i*bw; g.fillStyle=c; g.globalAlpha=s.u?1:.35; g.fillRect(x,H-18-h,bw-2,h); g.globalAlpha=1;
+      if(band(s.f)==='L5'){ g.fillStyle=fg; g.fillRect(x,H-18-h-3,bw-2,2); } if(bw>=12){ g.fillStyle=mu; g.font='8px '+font; g.textAlign='center'; g.fillText((GNC[s.c]||[,'?'])[1]+s.id,x+bw/2-1,H-6); } }); } }
+const _rp6=renderPanel; renderPanel=function(){ _rp6(); if(VIEW.tab==='sat'){ const el=$('#panel'), st=el.scrollTop; el.innerHTML=vSat(); el.scrollTop=st; setTimeout(satDraw,30); }
+  else if(VIEW.tab==='fly'){ const el=$('#panel'); if(el&&!el.querySelector('#satLink')){ const d=document.createElement('div'); d.id='satLink'; d.className='actions'; d.innerHTML=`<button class="btn" data-act="tab" data-tab="sat">${svgI('sat',1.8)} ${t('Satellites')}${GN.sats.length?` · ${GN.sats.filter(s=>s.u).length}/${GN.sats.length}`:''}</button>`; el.appendChild(d); } } };
+Object.assign(ON,{ gnssRaw:el=>{ CFG.gnssRaw=el.checked; saveCfg(); if(FLY.gps){ stopGPS(); startGPS(); } renderPanel(); } });
+Object.assign(IC,{sat:'<rect x="9" y="9" width="6" height="6" rx="1" transform="rotate(45 12 12)"/><path d="M4 4l4 4M16 16l4 4M7 3l-4 4M21 17l-4 4"/><path d="M15 21a6 6 0 0 0 6-6"/>'});
+Object.assign(TAB_T,{sat:'Satellites'});
+{ const _vh=vHome; vHome=function(){ return _vh().replace(/(<button class="ht [^"]*" data-act="tab" data-tab="fly"[^>]*>[\s\S]*?<\/button>)/,`$1<button class="ht grn" data-act="tab" data-tab="sat">${svgI('sat',1.7)}<span>${t('Satellites')}</span></button>`); }; }
+Object.assign(RU,{'Satellites':'Спутники','Satellite positioning was switched off in the phone settings':'Спутниковое определение местоположения отключено в настройках телефона','Satellite receiver not available ({e}) — standard location is used':'Приёмник спутников недоступен ({e}) — используется стандартное местоположение',
+ 'Satellite details are available in the Android app only. iPhone and browsers give the position but do not show satellites; they also use GPS, GLONASS, Galileo and BeiDou automatically when the phone supports them.':'Данные о спутниках доступны только в приложении для Android. iPhone и браузеры дают координаты, но не показывают спутники; GPS, ГЛОНАСС, Galileo и BeiDou они тоже используют автоматически, если телефон их поддерживает.',
+ 'Accuracy':'Точность','Satellites only (no Wi-Fi / cell positioning)':'Только спутники (без Wi-Fi и сотовых вышек)','Position comes straight from the phone’s satellite receiver: all constellations the chip supports are used together.':'Координаты берутся напрямую с приёмника спутников телефона: все системы, которые поддерживает чип, используются одновременно.',
+ 'Standard Android location (may mix in Wi-Fi and cell towers).':'Стандартное местоположение Android (может подмешивать Wi-Fi и сотовые вышки).','Fix':'Решение','GPS off':'GPS выключен','standard location':'стандартное','searching…':'поиск…','Satellites used / visible':'Спутников в решении / видно',
+ 'Accuracy horizontal / vertical':'Точность по горизонтали / вертикали','Dual frequency (L5 / E5a / B2a)':'Вторая частота (L5 / E5a / B2a)','yes, {n} signals':'да, сигналов: {n}','not received':'не принимается','Altitude reference':'Отсчёт высоты','MSL (Android geoid model)':'над уровнем моря (модель геоида Android)',
+ 'WGS-84 ellipsoid + correction {c} m':'эллипсоид WGS-84 + поправка {c} м','Receiver':'Приёмник','System':'Система','Used':'В решении','Visible':'Видно','USA':'США','Russia':'Россия','Japan':'Япония','China':'Китай','EU':'ЕС','India':'Индия',
+ 'Waiting for satellite data… Go outside or near a window; the first fix can take up to a minute.':'Ожидание данных спутников… Выйдите на открытое место или к окну; первое решение может занять до минуты.','Start GPS to see the satellites.':'Включите GPS, чтобы увидеть спутники.',
+ 'Sky plot: centre — overhead, ring — horizon, north up. Filled — used in the position, hollow — visible only. Bars: signal strength C/N0 (above 35 dB-Hz is good).':'Карта неба: центр — зенит, внешний круг — горизонт, север вверху. Закрашенные — участвуют в решении, пустые — только видны. Столбики: сила сигнала C/N0 (выше 35 дБ-Гц — хорошо).'});
 
 /* ================= boot ================= */
 (()=>{ let seed=null; try{ const tx=$('#fmn-seed').textContent.trim(); if(tx) seed=JSON.parse(tx); }catch(e){}
