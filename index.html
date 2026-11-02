@@ -617,6 +617,23 @@ body{font-family:var(--f-display)}
 .ci-pt.cur{background:#1F6FD1}
 pre.fpl{font:13px/1.4 var(--f-data);white-space:pre-wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:10px;margin:6px 0}
 #acDet summary{list-style:none;display:inline-flex;margin:6px 0} #acDet textarea{width:100%;font:13px var(--f-data)}
+
+.asp-l{background:none;border:0;white-space:nowrap;transform:translate(-50%,-50%);text-align:center;font:700 11px/1.15 var(--f-data);text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff}
+.asp-l b{display:block;font-size:11.5px} .asp-l i{font-style:normal;font-weight:600;font-size:10.5px}
+.asp-b{color:#1F4FD1} .asp-r{color:#C21810} .asp-f{color:#2d3f9e;font-size:13px;letter-spacing:.06em}
+.grid-l{background:none;border:0;white-space:nowrap;font:800 30px/1 var(--f-display);color:rgba(60,74,92,.38);transform:translate(8px,-34px)} .grid-l.v{transform:translate(6px,-15px) rotate(-90deg);transform-origin:0 0}
+.mef{background:none;border:0;white-space:nowrap;transform:translate(-50%,-50%);font:800 40px/1 var(--f-display);color:rgba(80,96,118,.55);letter-spacing:-.02em}
+.mef sup{font-size:.55em;vertical-align:.75em} .mef.sm{font-size:28px} .mef.hi{color:rgba(214,86,60,.62)}
+.aero-nav,.aero-rp,.aero-obs,.aero-ad{background:none;border:0} .aero-nav{color:#1F4FD1} .aero-obs{color:#8a2c12}
+.aero-nav .navbox{position:absolute;left:24px;top:2px;white-space:nowrap;font:700 11px var(--f-data);background:#fff;color:#1F4FD1;border:1.5px solid #1F4FD1;padding:1px 4px}
+.aero-rp span,.aero-ad span,.aero-obs span{position:absolute;left:21px;top:2px;white-space:nowrap;font:700 11.5px var(--f-data);color:#111;text-shadow:0 0 3px #fff,0 0 3px #fff}
+.aero-ad span{color:#1F4FD1} .aero-obs span{left:16px;top:-2px;font-size:10.5px;color:#8a2c12}
+.asp-h{margin:10px 0 4px} table.asp-t{border-collapse:collapse;width:100%;font-size:12.5px} .asp-t td{border-top:1px solid var(--line);padding:4px 3px;vertical-align:top} .asp-t td.mono{text-align:right;white-space:nowrap;font-family:var(--f-data)}
+.asp-sw{display:inline-block;width:10px;height:10px;margin-right:5px;border:2px solid #1F4FD1;vertical-align:-1px} .asp-sw.a-r{border-color:#E0201B;background:rgba(224,32,27,.2)} .asp-sw.a-f{border-color:#2d3f9e;border-width:3px} .asp-sw.a-w{border-color:#5b6d86}
+.aero-menu .lchips{display:flex;flex-wrap:wrap;gap:4px} .aero-menu .note{margin:6px 0} .aero-menu .actions{margin-bottom:6px}
+[data-theme=dark] .asp-l,[data-theme=dark] .aero-rp span,[data-theme=dark] .aero-obs span,[data-theme=dark] .aero-ad span{text-shadow:0 0 3px #000,0 0 3px #000,0 0 2px #000}
+[data-theme=dark] .asp-b,[data-theme=dark] .aero-ad span{color:#7fa8ff} [data-theme=dark] .asp-r{color:#ff6b62} [data-theme=dark] .asp-f{color:#9fb0ff} [data-theme=dark] .aero-rp span{color:#fff}
+[data-theme=dark] .grid-l{color:rgba(200,214,235,.28)} [data-theme=dark] .mef{color:rgba(200,214,235,.38)} [data-theme=dark] .mef.hi{color:rgba(255,120,90,.55)}
 </style>
 </head>
 <body><div id="tawsBan" hidden></div>
@@ -3709,7 +3726,7 @@ function curAc(){ let a=ACFT.find(x=>x.id===CFG.acft); if(!a&&ACFT.length) a=ACF
 function wbCalc(a,fuelKg){ if(!a) return null; const N=v=>{ const x=num(v); return x==null?0:x; }; let m=N(a.empty.m), mo=N(a.empty.m)*N(a.empty.arm); a.st.forEach(s=>{ m+=N(s.m); mo+=N(s.m)*N(s.arm); });
   const f=N(fuelKg); m+=f; mo+=f*N(a.fuelArm); return {m,cg:m?mo/m:0,mo}; }
 function envPts(a){ return (a.env||'').split(/[\n;]+/).map(s=>s.trim().split(/[\s,\/]+/).map(Number)).filter(p=>p.length>=2&&p.every(isFinite)).map(([arm,m])=>({arm,m})); }
-function inPoly(P,x,y){ let c=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ if(((P[i].m>y)!==(P[j].m>y))&&(x<(P[j].arm-P[i].arm)*(y-P[i].m)/(P[j].m-P[i].m)+P[i].arm)) c=!c; } return c; }
+function wbInPoly(P,x,y){ let c=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ if(((P[i].m>y)!==(P[j].m>y))&&(x<(P[j].arm-P[i].arm)*(y-P[i].m)/(P[j].m-P[i].m)+P[i].arm)) c=!c; } return c; }
 function routeFuel(r){ const L_=r?routeLegs(r):[]; return L_.reduce((s,l)=>s+(l.burn||0),0); }
 function fplText(a,r){ const pts=r?routePts(r):[], legs=r?routeLegs(r):[], dep=pts[0], dst=pts[pts.length-1], ic=p=>p&&(p.icao||(isAD(p)?p.name:''))||'ZZZZ';
   const ll=p=>{ const la=Math.abs(p.lat), lo=Math.abs(p.lon); return String(Math.floor(la)).padStart(2,'0')+String(Math.round((la%1)*60)).padStart(2,'0')+(p.lat>=0?'N':'S')+String(Math.floor(lo)).padStart(3,'0')+String(Math.round((lo%1)*60)).padStart(2,'0')+(p.lon>=0?'E':'W'); };
@@ -3722,7 +3739,7 @@ function fplText(a,r){ const pts=r?routePts(r):[], legs=r?routeLegs(r):[], dep=p
   return `(FPL-${(a&&(a.cs||a.reg)||'XXXXX').replace(/[^A-Z0-9]/gi,'').toUpperCase()}-${alt==null?'V':'I'}G\n-${(a&&a.type||'ZZZZ').toUpperCase()}/${(a&&a.wtc)||'L'}-${(a&&a.equip)||'S/C'}\n-${ic(dep)}${tm}\n-K${String(Math.round(spdK||0)).padStart(4,'0')}${lvl} ${rt?'DCT '+rt+' DCT':'DCT'}\n-${ic(dst)}${eet}\n-DOF/${D}${a&&a.reg?' REG/'+a.reg.toUpperCase():''}${a&&a.type?'':' TYP/'+((a&&a.name)||'')}\n-E/${(a&&a.endur?String(a.endur).replace(':','').padStart(4,'0'):'0000')} P/${(a&&a.pob)||'1'}${a&&a.color?' A/'+a.color.toUpperCase():''})`; }
 function vBrief(){ const r=Rt(FLY.routeId)||MS.routes[0], a=curAc(), pts=r?routePts(r):[], trip=routeFuel(r), f0=num(BR.fuel)??(r&&r.fuel0)??null;
   const wb=a?wbCalc(a,f0):null, wbl=a&&f0!=null?wbCalc(a,Math.max(0,f0-trip)):null, env=a?envPts(a):[], mtow=a?num(a.mtow):null;
-  const okTo=wb&&(env.length<3||inPoly(env,wb.cg,wb.m))&&(mtow==null||wb.m<=mtow), okL=wbl&&(env.length<3||inPoly(env,wbl.cg,wbl.m));
+  const okTo=wb&&(env.length<3||wbInPoly(env,wb.cg,wb.m))&&(mtow==null||wb.m<=mtow), okL=wbl&&(env.length<3||wbInPoly(env,wbl.cg,wbl.m));
   const inp=(k,v,ph,cls='num')=>`<input class="${cls}" data-on="ac" data-k="${k}" ${cls==='num'?'inputmode="decimal"':''} value="${v==null?'':esc(String(v))}" placeholder="${ph||''}">`;
   const acForm=a?`<details ${BR.open?'open':''} id="acDet"><summary class="btn">${t('Edit aircraft profile')}</summary><div class="form">
     <div class="grid3"><label class="f"><span>${t('Profile name')}</span>${inp('name',a.name,'','txt')}</label><label class="f"><span>${t('Type (ICAO)')}</span>${inp('type',a.type,'L39','txt')}</label><label class="f"><span>${t('Registration')}</span>${inp('reg',a.reg,'','txt')}</label></div>
@@ -3751,7 +3768,7 @@ function drawWB(){ const c=$('#wbC'), a=curAc(); if(!c||!a) return; const env=en
   [[wb,'TO','#E0201B'],[wl,'LDG','#1F6FD1']].forEach(([p,l,c2])=>{ g.fillStyle=c2; g.beginPath(); g.arc(X(p.cg),Y(p.m),5,0,2*Math.PI); g.fill(); g.font='700 11px '+getComputedStyle(document.body).fontFamily; g.fillText(l,X(p.cg)+7,Y(p.m)-6); });
   g.fillStyle=cs.getPropertyValue('--muted').trim()||'#666'; g.font='600 10px '+getComputedStyle(document.body).fontFamily; g.fillText(t('CG (m)')+' →',W-60,H-4); g.fillText(t('kg'),4,12); }
 const _rp3=renderPanel; renderPanel=function(){ _rp3(); if(VIEW.tab==='wx'||VIEW.tab==='brief'||(VIEW.tab==='chart'&&VIEW.sub==='cimg')){ const el=$('#panel'), st=el.scrollTop; el.innerHTML=VIEW.tab==='wx'?vWx():VIEW.tab==='brief'?vBrief():vChartImg(); el.scrollTop=st; if(VIEW.tab==='brief') setTimeout(drawWB,30); }
-  else if(VIEW.tab==='chart'&&!VIEW.sub){ const a=chartAd(), el=$('#panel'); if(a&&!el.querySelector('#ciList')){ const d=document.createElement('div'); d.id='ciList'; d.innerHTML=chartListHtml(a); el.appendChild(d); } } };
+ };
 Object.assign(ON,{ acSel:el=>{ CFG.acft=el.value; saveCfg(); renderPanel(); }, brF:el=>{ BR.fuel=el.value; clearTimeout(BR.tm); BR.tm=setTimeout(()=>{ renderPanel(); },700); },
   ac:el=>{ const a=curAc(); if(!a) return; setPath(a,el.dataset.k,el.value); acftSave(); BR.open=true; clearTimeout(BR.tm); BR.tm=setTimeout(()=>{ const f=$('#fplT'); if(f) f.textContent=fplText(a,Rt(FLY.routeId)||MS.routes[0]); drawWB(); },500); } });
 Object.assign(ACT,{
@@ -3807,6 +3824,181 @@ Object.assign(RU,{'Synthetic view':'Синтетическое изображе�
  'Terrain warning (TAWS)':'Предупреждение о земле (TAWS)','Voice warnings':'Голосовые предупреждения'});
 
 setTimeout(()=>{ try{ chartsDraw(); const L_=CFG.wxl||{}; if(L_.st) wxFetch(true); if(L_.radar||L_.sat) wxRadar(); if(L_.cl||L_.wind) wxGrid(); }catch(e){ console.warn(e); } },1500);
+/* ========================================================================== */
+/*  AERONAUTICAL CHART (ICAO): airspace, restricted / prohibited / danger areas, FIR / CTA / TMA / CTR,       */
+/*  navaids, VFR reporting points, obstacles, airports (openAIP data), MEF numbers and lat/lon grid          */
+/* ========================================================================== */
+Object.assign(LAYERS,{aero:{g:'aero',name:'Aeronautical chart (ICAO)',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}',sub:'',max:13,attr:'Terrain © Esri · Aeronautical data © openAIP (CC BY-NC 4.0)',fb:['esriTopo','otm']}});
+LGROUPS.unshift(['aero','Aeronautical']);
+const AERO_CC=['uz','kz','kg','tj','tm','af'], AERO_L=['asp','nav','rpp','obs','apt'];
+const AERO={asp:[],nav:[],rpp:[],obs:[],apt:[],meta:null,busy:false,prog:'',err:''};
+const ADB={db:null,open(){ if(this.db) return Promise.resolve(this.db); return new Promise((res,rej)=>{ const r=indexedDB.open('fmn-aero',1); r.onupgradeneeded=()=>r.result.createObjectStore('d'); r.onsuccess=()=>{ this.db=r.result; res(this.db); }; r.onerror=()=>rej(r.error); }); },
+  async put(k,v){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('d','readwrite'); tx.objectStore('d').put(v,k); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
+  async get(k){ const db=await this.open(); return new Promise(res=>{ const q=db.transaction('d').objectStore('d').get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>res(null); }); }};
+const aeroCfg=()=>{ if(!CFG.aero) CFG.aero={asp:true,lbl:true,mef:true,grid:true,nav:true,rpp:true,obs:true,apt:true,all:false,warn:true}; return CFG.aero; };
+const aeroOn=()=>CFG.layer==='aero'||aeroCfg().all;
+/* --- reading openAIP and other files --- */
+const ASP_T={0:'OTH',1:'R',2:'D',3:'P',4:'CTR',5:'TMZ',6:'RMZ',7:'TMA',8:'TRA',9:'TSA',10:'FIR',11:'UIR',12:'ADIZ',13:'ATZ',14:'MATZ',15:'AWY',16:'MTR',17:'ALERT',18:'WARN',19:'PROT',20:'HTZ',21:'GLD',22:'TRP',23:'TIZ',24:'TIA',25:'MTA',26:'CTA',27:'ACC',28:'SPORT',29:'LOR',30:'MRT',31:'TFR',32:'VFR',33:'FIS',34:'LTA',35:'UTA',36:'MCTR'};
+const ASP_S={RESTRICTED:'R',DANGER:'D',PROHIBITED:'P',Q:'D',CONTROL_ZONE:'CTR',TERMINAL_CONTROL_AREA:'TMA',CONTROL_AREA:'CTA',FLIGHT_INFORMATION_REGION:'FIR',AIRWAY:'AWY',GLIDING:'GLD',GP:'P',W:'GLD'};
+const ASP_N={OTH:'Other',R:'Restricted',D:'Danger',P:'Prohibited',CTR:'Control zone',TMZ:'TMZ',RMZ:'RMZ',TMA:'Terminal area',TRA:'Temporary reserved',TSA:'Temporary segregated',FIR:'FIR',UIR:'UIR',ADIZ:'ADIZ',ATZ:'ATZ',MATZ:'Military ATZ',AWY:'Airway',MTR:'Military training route',ALERT:'Alert area',WARN:'Warning area',PROT:'Protected area',HTZ:'Helicopter zone',GLD:'Gliding sector',TRP:'TRP',TIZ:'TIZ',TIA:'TIA',MTA:'Military training area',CTA:'Control area',ACC:'ACC sector',SPORT:'Sport / recreation',LOR:'Low overflight restriction',MRT:'MRT',TFR:'Temporary flight restriction',VFR:'VFR sector',FIS:'FIS sector',LTA:'Lower traffic area',UTA:'Upper traffic area',MCTR:'Military CTR'};
+const SUA=new Set(['R','P','D','TRA','TSA','MTA','LOR','TFR','ALERT','WARN','PROT','MTR']);
+const ASP_BAD=new Set(['R','P','D']);
+function aspType(v){ if(v==null) return 'OTH'; if(typeof v==='number') return ASP_T[v]||'OTH'; const s=String(v).toUpperCase().trim(); return ASP_S[s]||(ASP_N[s]?s:/RESTR/.test(s)?'R':/PROHIB/.test(s)?'P':/DANGER/.test(s)?'D':'OTH'); }
+function aspLim(o){ if(o==null) return null; if(typeof o==='string'||typeof o==='number') return {txt:String(o)}; return {v:+o.value,u:o.unit,d:o.referenceDatum}; }
+function limTxt(l){ if(!l) return '—'; if(l.txt!=null) return l.txt; if(l.u===6) return 'FL'+String(Math.round(l.v)).padStart(3,'0'); if(l.d===0&&!l.v) return 'GND'; return `${Math.round(l.v)} ${l.u===0?'m':'ft'}${l.d===0?' AGL':l.d===2?' STD':''}`; }
+/* limit in metres above MSL (AGL taken as above ground level of the point, or ignored) */
+function limM(l,gnd){ if(!l) return null; if(l.txt!=null){ const s=l.txt.toUpperCase(); if(/UNL/.test(s)) return 99999; if(/^(SFC|GND)$/.test(s.trim())) return gnd||0; const fl=s.match(/FL\s*(\d+)/); if(fl) return +fl[1]*100*FT; const m=s.match(/(\d+)\s*(M|FT|F)?/); if(!m) return null; const v=+m[1]*(m[2]==='M'?1:FT); return /AGL|GND|SFC/.test(s)?(gnd||0)+v:v; }
+  const v=l.u===6?l.v*100*FT:l.u===0?l.v:l.v*FT; return l.d===0?(gnd||0)+v:v; }
+const elv=o=>o==null?null:typeof o==='number'?o:(o.unit===1?+o.value*FT:+o.value);
+function ringsOf(g){ if(!g) return []; if(g.type==='Polygon') return [g.coordinates[0]]; if(g.type==='MultiPolygon') return g.coordinates.map(p=>p[0]); return []; }
+function bbOf(r){ let s=90,w=180,n=-90,e=-180; r.forEach(([la,lo])=>{ if(la<s)s=la; if(la>n)n=la; if(lo<w)w=lo; if(lo>e)e=lo; }); return [s,w,n,e]; }
+function mkAsp(p,rings,src){ rings=rings.filter(r=>r.length>=3); if(!rings.length) return null; const bbs=rings.map(bbOf), bb=[Math.min(...bbs.map(b=>b[0])),Math.min(...bbs.map(b=>b[1])),Math.max(...bbs.map(b=>b[2])),Math.max(...bbs.map(b=>b[3]))];
+  const cls=typeof p.icaoClass==='number'?('ABCDEFG'[p.icaoClass]||''):(p.icaoClass||p.class||'');
+  return {id:String(p._id||p.id||uid()),name:String(p.name||p.AN||'—'),t:p._t||aspType(p.type),cls:String(cls).toUpperCase().slice(0,1),lo:aspLim(p.lowerLimit!=null?p.lowerLimit:p.lower),hi:aspLim(p.upperLimit!=null?p.upperLimit:p.upper),rings,bb,src}; }
+const NAV_T={0:'DME',1:'TACAN',2:'NDB',3:'VOR',4:'VORDME',5:'TACAN',6:'VOR',7:'VORDME',8:'TACAN'};
+function freqTxt(f){ if(f==null) return ''; if(typeof f!=='object') return String(f); const v=+f.value; return f.unit===1||v>200&&v<2000?`${v} kHz`:`${v.toFixed(2)}`; }
+function normFC(j,src){ const out={asp:[],nav:[],rpp:[],obs:[],apt:[]}; const feats=Array.isArray(j)?j:(j&&j.features)||(j&&j.items)||[];
+  feats.forEach(f=>{ const p=f.properties||f, g=f.geometry; if(!g) return;
+    if(g.type==='Polygon'||g.type==='MultiPolygon'){ const a=mkAsp(p,ringsOf(g).map(r=>r.map(([lo,la])=>[la,lo])),src); if(a) out.asp.push(a); return; }
+    if(g.type!=='Point') return; const [lon,lat]=g.coordinates;
+    if(p.icaoCode!=null||p.runways||(p.type!=null&&p.frequencies&&!p.identifier)){ const tp=p.type, mil=tp===5||tp===4||/MIL/i.test(String(p.name||'')), hel=tp===4||tp===7;
+      out.apt.push({name:p.name||'',icao:p.icaoCode||'',k:hel?(mil?'MHP':'HP'):mil?'ADM':'APT',lat,lon,elev:elv(p.elevation),rw:(p.runways||[]).map(r=>({d:r.designator||'',len:r.dimension&&r.dimension.length?elv(r.dimension.length):null,sfc:r.surface&&r.surface.mainComposite})),
+        fq:(p.frequencies||[]).map(q=>({v:q.value,n:q.name||'',u:q.unit}))}); }
+    else if(p.identifier!=null||p.frequency!=null) out.nav.push({name:p.name||'',id:p.identifier||'',k:NAV_T[p.type]||(typeof p.type==='string'?p.type.replace(/[^A-Z]/gi,'').toUpperCase():'VOR'),f:freqTxt(p.frequency),ch:p.channel||'',lat,lon,elev:elv(p.elevation)});
+    else if(p.height!=null||(p.elevation!=null&&/OBST|MAST|TOWER|ANTEN|CHIMN|WIND/i.test(String(p.type||p.name||'')))) out.obs.push({name:p.name||'',lat,lon,top:elv(p.elevation),h:elv(p.height)});
+    else out.rpp.push({name:p.name||'',comp:!!p.compulsory,lat,lon}); });
+  return out; }
+/* OpenAir airspace text (the format used by most flight apps) */
+function parseOpenAir(txt){ const out=[]; let cur=null, ctr=null, dir=1;
+  const ll=s=>{ const m=s.match(/(\d+)[:\s](\d+(?:\.\d+)?)(?:[:\s](\d+(?:\.\d+)?))?\s*([NS])\s*,?\s*(\d+)[:\s](\d+(?:\.\d+)?)(?:[:\s](\d+(?:\.\d+)?))?\s*([EW])/i); if(!m) return null;
+    const la=(+m[1]+m[2]/60+(+m[3]||0)/3600)*(/s/i.test(m[4])?-1:1), lo=(+m[5]+m[6]/60+(+m[7]||0)/3600)*(/w/i.test(m[8])?-1:1); return [la,lo]; };
+  const arc=(c,r,a1,a2,d)=>{ const pts=[]; let span=d>0?((a2-a1+360)%360||360):-((a1-a2+360)%360||360); const n=Math.max(4,Math.ceil(Math.abs(span)/5)); for(let i=0;i<=n;i++){ const q=direct(c[0],c[1],n360(a1+span*i/n),r); pts.push([q.lat,q.lon]); } return pts; };
+  const flush=()=>{ if(cur&&cur.pts.length>=3){ const a=mkAsp({name:cur.name,_t:cur.t,icaoClass:cur.cls,lower:cur.lo,upper:cur.hi},[cur.pts],'file'); if(a) out.push(a); } };
+  txt.split(/\r?\n/).forEach(raw=>{ const s=raw.replace(/\*.*$/,'').trim(); if(!s) return; const k=s.slice(0,2).toUpperCase(), v=s.slice(2).trim();
+    if(k==='AC'){ flush(); const c=v.toUpperCase(); cur={name:'',t:/^[A-G]$/.test(c)?'CTA':c==='R'?'R':c==='Q'?'D':c==='P'||c==='GP'?'P':c==='CTR'?'CTR':c==='W'?'GLD':aspType(c),cls:/^[A-G]$/.test(c)?c:'',lo:null,hi:null,pts:[]}; ctr=null; dir=1; }
+    else if(!cur) return; else if(k==='AN') cur.name=v; else if(k==='AL') cur.lo=v; else if(k==='AH') cur.hi=v;
+    else if(k==='DP'){ const p=ll(v); if(p) cur.pts.push(p); }
+    else if(k==='V '||k==='V'){ const m=v.match(/^([XD])\s*=\s*(.+)$/i); if(m){ if(m[1].toUpperCase()==='X') ctr=ll(m[2]); else dir=m[2].trim()==='-'?-1:1; } }
+    else if(k==='DC'&&ctr){ const r=parseFloat(v)*1852; cur.pts=cur.pts.concat(arc(ctr,r,0,360,1)); }
+    else if(k==='DA'&&ctr){ const [r,a1,a2]=v.split(',').map(parseFloat); cur.pts=cur.pts.concat(arc(ctr,r*1852,a1,a2,dir)); }
+    else if(k==='DB'&&ctr){ const [s1,s2]=v.split(','), p1=ll(s1), p2=ll(s2); if(p1&&p2){ const i1=inverse(ctr[0],ctr[1],p1[0],p1[1]), i2=inverse(ctr[0],ctr[1],p2[0],p2[1]); cur.pts=cur.pts.concat(arc(ctr,i1.dist,i1.az1,i2.az1,dir)); } } });
+  flush(); return out; }
+async function aeroGet(url){ const N=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()&&Capacitor.Plugins&&Capacitor.Plugins.CapacitorHttp; let nerr='';
+  if(N){ try{ const r=await N.request({url,method:'GET',connectTimeout:20000,readTimeout:90000}); if(r.status===404||r.status===403) return null; if(r.status>=400) throw new Error('HTTP '+r.status); return typeof r.data==='string'?JSON.parse(r.data):r.data; }catch(e){ nerr=String(e.message||e); } }
+  const c=new AbortController(), tm=setTimeout(()=>c.abort(),90000);
+  try{ const r=await fetch(url,{signal:c.signal,cache:'no-store'}); if(r.status===404||r.status===403) return null; if(!r.ok) throw new Error('HTTP '+r.status); return JSON.parse(await r.text()); }
+  catch(e){ throw new Error((e.name==='AbortError'?'timeout':String(e.message||e))+(nerr?' / native: '+nerr:'')); } finally{ clearTimeout(tm); } }
+function aeroMerge(parts){ const o={asp:[],nav:[],rpp:[],obs:[],apt:[]}, seen=new Set(); parts.forEach(p=>{ if(!p) return; AERO_L.forEach(l=>(p[l]||[]).forEach(x=>{ const k=l+':'+(x.id&&l==='asp'?x.id:(x.name+':'+(+x.lat||x.bb&&x.bb[0]||0).toFixed(3))); if(seen.has(k)) return; seen.add(k); o[l].push(x); })); }); return o; }
+async function aeroLoad(){ try{ const m=await ADB.get('meta'); if(!m) return; AERO.meta=m; const parts=[]; for(const k of m.keys||[]) parts.push(await ADB.get(k)); Object.assign(AERO,aeroMerge(parts)); aeroDraw(); }catch(e){ console.warn('aero load',e); } }
+async function aeroDownload(){ if(AERO.busy) return; if(!navigator.onLine) return toast(t('No internet connection.')); AERO.busy=true; AERO.err=''; const keys=[], errs=[]; let n=0;
+  const old=(AERO.meta&&AERO.meta.keys||[]).filter(k=>k.startsWith('file:'));
+  for(const cc of AERO_CC){ const part={asp:[],nav:[],rpp:[],obs:[],apt:[]}; let got=false;
+    for(const l of AERO_L){ AERO.prog=`${cc.toUpperCase()} · ${l} (${++n}/${AERO_CC.length*AERO_L.length})`; aeroMenuStat();
+      try{ const j=await aeroGet(`https://s3.openaip.net/openaip-system-exports/${cc}_${l}.geojson`); if(j){ const r=normFC(j,'openaip'); AERO_L.forEach(x=>part[x]=part[x].concat(r[x])); got=true; } }catch(e){ errs.push(`${cc}_${l}: ${e.message||e}`); } }
+    if(got){ await ADB.put('oaip:'+cc,part); keys.push('oaip:'+cc); } }
+  AERO.busy=false; AERO.prog='';
+  if(!keys.length){ AERO.err=t('openAIP could not be reached')+(errs[0]?': '+errs[0]:''); toast(AERO.err,true); aeroMenuStat(); return; }
+  AERO.meta={date:new Date().toISOString().slice(0,10),keys:keys.concat(old),errs:errs.slice(0,5)}; await ADB.put('meta',AERO.meta); await aeroLoad();
+  toast(t('Aeronautical data updated: {a} airspaces, {n} navaids, {r} reporting points, {o} obstacles',{a:AERO.asp.length,n:AERO.nav.length,r:AERO.rpp.length,o:AERO.obs.length})); aeroMenuStat(); }
+function aeroImport(){ const f=document.createElement('input'); f.type='file'; f.accept='.geojson,.json,.txt,.air,.openair,application/json,text/plain'; f.onchange=async()=>{ const file=f.files[0]; if(!file) return;
+  try{ const txt=await file.text(); let part; if(/^\s*[\[{]/.test(txt)) part=normFC(JSON.parse(txt),'file'); else part={asp:parseOpenAir(txt),nav:[],rpp:[],obs:[],apt:[]};
+    const cnt=AERO_L.reduce((s,l)=>s+part[l].length,0); if(!cnt) return toast(t('Nothing recognised in this file.'),true);
+    const k='file:'+file.name; await ADB.put(k,part); const m=AERO.meta||{date:new Date().toISOString().slice(0,10),keys:[]}; if(!m.keys.includes(k)) m.keys.push(k); AERO.meta=m; await ADB.put('meta',m); await aeroLoad();
+    toast(t('Imported {n} objects from {f}',{n:cnt,f:file.name})); aeroMenuStat(); }catch(e){ toast(String(e.message||e),true); } }; f.click(); }
+/* --- drawing --- */
+['aeroGrid','aeroAsp','aeroLbl'].forEach((n,i)=>{ const p=map.createPane(n); p.style.zIndex=[330,350,455][i]; if(n!=='aeroAsp') p.style.pointerEvents='none'; });
+const aeroCanvas=L.canvas({pane:'aeroAsp',padding:.4});
+const gAeroA=L.layerGroup().addTo(map), gAeroL=L.layerGroup().addTo(map), gAeroP=L.layerGroup().addTo(map), gGrid=L.layerGroup().addTo(map);
+let aeroLbl=null; function aeroLabels(on){ if(on&&!aeroLbl){ aeroLbl=new CachedLayer(OVL.lbl.url,{key:'ovl-lbl',maxZoom:20,maxNativeZoom:OVL.lbl.max,opacity:1,className:'ovl-lbl',zIndex:3}).addTo(map); } if(!on&&aeroLbl){ map.removeLayer(aeroLbl); aeroLbl=null; } }
+function aspStyle(a){ const t_=a.t; const B='#1F4FD1', R='#E0201B';
+  if(t_==='FIR'||t_==='UIR'||t_==='ACC'||t_==='FIS') return {color:'#2d3f9e',weight:3.2,opacity:.8,fill:false,interactive:false};
+  if(t_==='CTA'||t_==='TMA'||t_==='UTA'||t_==='LTA'||t_==='TIA'||t_==='TIZ') return {color:B,weight:2,opacity:.9,fillColor:B,fillOpacity:.04};
+  if(t_==='CTR'||t_==='MCTR'||t_==='ATZ'||t_==='MATZ'||t_==='HTZ') return {color:B,weight:2.2,dashArray:'8 5',fillColor:B,fillOpacity:.08};
+  if(t_==='P') return {color:R,weight:2.8,fillColor:R,fillOpacity:.18};
+  if(t_==='D') return {color:R,weight:2.2,dashArray:'7 4',fillColor:R,fillOpacity:.06};
+  if(SUA.has(t_)) return {color:R,weight:2.4,fillColor:R,fillOpacity:.08};
+  if(t_==='AWY') return {color:'#5b6d86',weight:1.2,opacity:.55,fillOpacity:.02};
+  if(t_==='ADIZ') return {color:'#7a3fb0',weight:2.4,dashArray:'10 4 2 4',fill:false,interactive:false};
+  return {color:'#7a3fb0',weight:1.6,fillColor:'#7a3fb0',fillOpacity:.04}; }
+const bbHit=(bb,b)=>!(bb[2]<b.getSouth()||bb[0]>b.getNorth()||bb[3]<b.getWest()||bb[1]>b.getEast());
+function aspAt(lat,lon){ return AERO.asp.filter(a=>lat>=a.bb[0]&&lat<=a.bb[2]&&lon>=a.bb[1]&&lon<=a.bb[3]&&a.rings.some(r=>inPoly({lat,lon},r))).sort((x,y)=>(limM(x.lo)||0)-(limM(y.lo)||0)); }
+function aspRow(a){ const m=l=>{ const v=limM(l); return v!=null&&v<90000&&CFG.alt!=='ft'&&!(l.u===0)?` <small>(${Math.round(v)} m)</small>`:''; };
+  return `<tr><td><span class="asp-sw a-${SUA.has(a.t)?'r':a.t==='FIR'||a.t==='UIR'?'f':a.t==='AWY'?'w':'b'}"></span><b>${esc(a.name)}</b><br><small>${t(ASP_N[a.t]||a.t)}${a.cls?' · '+t('class')+' '+a.cls:''}</small></td><td class="mono">${esc(limTxt(a.hi))}${m(a.hi)}<br>${esc(limTxt(a.lo))}${m(a.lo)}</td></tr>`; }
+function aspHtml(lat,lon){ const L_=aspAt(lat,lon); if(!L_.length) return ''; return `<h4 class="asp-h">${t('Airspace here')}</h4><table class="asp-t">${L_.map(aspRow).join('')}</table>`; }
+function aeroPop(ll){ const h=aspHtml(ll.lat,ll.lng); if(!h) return; L.popup({maxWidth:340}).setLatLng(ll).setContent(`<div class="pop">${h}<p class="note">${fmtLL(ll.lat,ll.lng)}</p></div>`).openOn(map); }
+const _infoAt=infoAt; infoAt=async function(ll){ const pr=_infoAt(ll); setTimeout(()=>{ const el=document.querySelector('.leaflet-popup .pop'); if(el&&AERO.asp.length){ const h=aspHtml(ll.lat,nLon(ll.lng)); if(h) el.insertAdjacentHTML('beforeend',h); } },0); return pr; };
+function ptLbl(html,cls){ return L.divIcon({className:'aero-pl '+cls,html,iconSize:null,iconAnchor:[-10,8]}); }
+function dupNear(lat,lon,name,km){ const r=(km||3)*1000; return allPts().some(p=>(!name||String(p.name||'').toUpperCase()===String(name).toUpperCase()||p.icao&&p.icao===name)&&Math.abs(p.lat-lat)<.05&&inverse(p.lat,p.lon,lat,lon).dist<r); }
+function aeroDraw(){ gAeroA.clearLayers(); gAeroL.clearLayers(); gAeroP.clearLayers(); gGrid.clearLayers(); const on=aeroOn(), C=aeroCfg(); aeroLabels(CFG.layer==='aero'); if(!on) return;
+  const b=map.getBounds().pad(.25), z=map.getZoom();
+  if(C.grid) drawGrid(z); if(C.mef) drawMef(z);
+  if(C.asp){ const shown=[]; AERO.asp.forEach(a=>{ if(!bbHit(a.bb,b)) return; if(a.t==='AWY'&&z<8) return; const st=Object.assign({renderer:aeroCanvas,bubblingMouseEvents:false},aspStyle(a));
+      const lyr=L.polygon(a.rings,st); if(st.interactive!==false) lyr.on('click',e=>{ if(MODE) return handleModeClick(e.latlng,null); aeroPop(e.latlng); }); gAeroA.addLayer(lyr); shown.push(a); });
+    if(C.lbl&&z>=7){ let n=0; shown.sort((x,y)=>(SUA.has(y.t)?1:0)-(SUA.has(x.t)?1:0)).forEach(a=>{ if(n>90||a.t==='AWY') return; const p1=map.latLngToContainerPoint([a.bb[0],a.bb[1]]), p2=map.latLngToContainerPoint([a.bb[2],a.bb[3]]), w=Math.abs(p2.x-p1.x), h=Math.abs(p2.y-p1.y);
+        const big=a.t==='FIR'||a.t==='UIR'||a.t==='ACC'||a.t==='FIS'; if(w<46||h<30||(big&&z>8)) return; let c=a.rings[0].reduce((s,q)=>[s[0]+q[0]/a.rings[0].length,s[1]+q[1]/a.rings[0].length],[0,0]);
+        if(!inPoly({lat:c[0],lon:c[1]},a.rings[0])) c=[(a.bb[0]+a.bb[2])/2,(a.bb[1]+a.bb[3])/2]; if(!SUA.has(a.t)&&!big){ const q=[a.bb[2]-(a.bb[2]-a.bb[0])*.09,(a.bb[1]+a.bb[3])/2]; if(a.rings.some(r=>inPoly({lat:q[0],lon:q[1]},r))) c=q; } if(!map.getBounds().contains(c)) return; n++;
+        const k=SUA.has(a.t)?'r':big?'f':'b'; gAeroL.addLayer(L.marker(c,{pane:'aeroLbl',interactive:false,icon:L.divIcon({className:'asp-l asp-'+k,iconSize:null,html:`<b>${esc(a.name)}</b>${big?'':`<i>${a.cls?a.cls+' · ':''}${esc(limTxt(a.hi))}<br>${esc(limTxt(a.lo))}</i>`}`})})); }); } }
+  if(C.nav&&z>=7) AERO.nav.forEach(n=>{ if(!b.contains([n.lat,n.lon])||dupNear(n.lat,n.lon,n.id,6)) return; const k=SYM[n.k]?n.k:'VOR';
+    const m=L.marker([n.lat,n.lon],{icon:L.divIcon({className:'aero-nav',html:`<svg viewBox="-13 -13 26 26" width="26" height="26">${SYM[k]}</svg>${z>=8?`<span class="navbox">${esc(n.id)} ${esc(n.f)}</span>`:''}`,iconSize:[26,26],iconAnchor:[13,13]}),bubblingMouseEvents:false});
+    m.on('click',()=>L.popup().setLatLng([n.lat,n.lon]).setContent(`<div class="pop"><h4>${esc(n.id)} · ${esc(n.name)}</h4><dl class="kv"><dt>${t('Type')}</dt><dd>${esc(n.k)}</dd><dt>${t('Frequency')}</dt><dd>${esc(n.f)}${n.ch?' · CH '+esc(n.ch):''}</dd>${n.elev!=null?`<dt>${t('Elevation')}</dt><dd>${fmtElev(n.elev)}</dd>`:''}<dt>${CFG.coord}</dt><dd>${fmtLL(n.lat,n.lon)}</dd></dl><p class="note">openAIP</p></div>`).openOn(map)); gAeroP.addLayer(m); });
+  if(C.rpp&&z>=8) AERO.rpp.forEach(r=>{ if(!b.contains([r.lat,r.lon])||dupNear(r.lat,r.lon,r.name,3)) return; const m=L.marker([r.lat,r.lon],{icon:L.divIcon({className:'aero-rp',html:`<svg viewBox="-10 -10 20 20" width="20" height="20">${r.comp?SYM.RP:SYM.WPT}</svg><span>${esc(r.name)}</span>`,iconSize:[20,20],iconAnchor:[10,10]}),bubblingMouseEvents:false});
+    m.on('click',()=>L.popup().setLatLng([r.lat,r.lon]).setContent(`<div class="pop"><h4>${esc(r.name)}</h4><div class="t">${r.comp?t('Compulsory reporting point'):t('Reporting point (on request)')}</div><dl class="kv"><dt>${CFG.coord}</dt><dd>${fmtLL(r.lat,r.lon)}</dd></dl><div class="actions"><button class="btn sm primary" data-act="addHere" data-lat="${r.lat}" data-lon="${r.lon}">${t('Add point here')}</button></div></div>`).openOn(map)); gAeroP.addLayer(m); });
+  if(C.obs&&z>=10) AERO.obs.forEach(o=>{ if(!b.contains([o.lat,o.lon])) return; gAeroP.addLayer(L.marker([o.lat,o.lon],{interactive:false,icon:L.divIcon({className:'aero-obs',html:`<svg viewBox="-10 -10 20 20" width="20" height="20">${SYM.OBS}</svg><span>${o.top!=null?Math.round(CFG.alt==='ft'?o.top/FT:o.top):''}</span>`,iconSize:[20,20],iconAnchor:[10,14]})})); });
+  if(C.apt&&z>=7) AERO.apt.forEach(a=>{ if(!b.contains([a.lat,a.lon])||dupNear(a.lat,a.lon,null,2.5)||(a.icao&&allPts().some(p=>p.icao===a.icao||p.name===a.icao))) return; if((a.k==='HP'||a.k==='MHP')&&z<10) return;
+    const m=L.marker([a.lat,a.lon],{icon:L.divIcon({className:'aero-ad',html:`<svg viewBox="-12 -12 24 24" width="22" height="22">${SYM[a.k]||SYM.APT}</svg><span>${esc(a.icao||a.name)}</span>`,iconSize:[22,22],iconAnchor:[11,11]}),bubblingMouseEvents:false});
+    m.on('click',()=>L.popup({maxWidth:320}).setLatLng([a.lat,a.lon]).setContent(`<div class="pop"><h4>${esc(a.icao)} ${esc(a.name)}</h4><dl class="kv">${a.elev!=null?`<dt>${t('Elevation')}</dt><dd>${fmtElev(a.elev)}</dd>`:''}${a.rw.map(r=>`<dt>${t('RWY')} ${esc(r.d)}</dt><dd>${r.len?Math.round(r.len)+' m':''}</dd>`).join('')}${a.fq.map(q=>`<dt>${esc(q.n||t('Frequency'))}</dt><dd>${esc(q.v)}</dd>`).join('')}<dt>${CFG.coord}</dt><dd>${fmtLL(a.lat,a.lon)}</dd></dl><p class="note">openAIP</p></div>`).openOn(map)); gAeroP.addLayer(m); }); }
+function drawGrid(z){ if(z<5) return; const b=map.getBounds(), st=z<7?1:.5; const s=Math.floor(b.getSouth()/st)*st, n=Math.ceil(b.getNorth()/st)*st, w=Math.floor(b.getWest()/st)*st, e=Math.ceil(b.getEast()/st)*st;
+  const sty={pane:'aeroGrid',interactive:false,color:'#3c4a5c',weight:1,opacity:.45};
+  for(let la=s;la<=n;la+=st) gGrid.addLayer(L.polyline([[la,w],[la,e]],sty)); for(let lo=w;lo<=e;lo+=st) gGrid.addLayer(L.polyline([[s,lo],[n,lo]],sty));
+  const cx=(b.getWest()+b.getEast())/2, cy=(b.getSouth()+b.getNorth())/2;
+  for(let la=Math.ceil(s);la<=n;la++) gGrid.addLayer(L.marker([la,cx],{pane:'aeroGrid',interactive:false,icon:L.divIcon({className:'grid-l',html:`${Math.abs(la)}°${la>=0?'N':'S'}`,iconSize:null})}));
+  for(let lo=Math.ceil(w);lo<=e;lo++) gGrid.addLayer(L.marker([cy,lo],{pane:'aeroGrid',interactive:false,icon:L.divIcon({className:'grid-l v',html:`${String(Math.abs(lo)).padStart(2,'0')}°${lo>=0?'E':'W'}`,iconSize:null})})); }
+/* maximum elevation figure for each 30'×30' quadrant: highest terrain sampled (or obstacle) + 300 ft, rounded up to 100 ft */
+const MEF=(()=>{ try{ return JSON.parse(localStorage.getItem('fmn.mef.v1'))||{}; }catch(e){ return {}; } })(); let mefQ=[], mefBusy=false;
+function mefVal(k,la0,lo0){ const c=MEF[k]; if(c==null) return null; let mx=c; AERO.obs.forEach(o=>{ if(o.top!=null&&o.lat>=la0&&o.lat<la0+.5&&o.lon>=lo0&&o.lon<lo0+.5&&o.top>mx) mx=o.top; }); return Math.ceil((mx/FT+300)/100)*100; }
+function drawMef(z){ if(z<8||z>12) return; const b=map.getBounds(); const s=Math.floor(b.getSouth()*2)/2, n=b.getNorth(), w=Math.floor(b.getWest()*2)/2, e=b.getEast(); let cnt=0;
+  for(let la=s;la<n;la+=.5) for(let lo=w;lo<e;lo+=.5){ if(++cnt>80) return; const k=la.toFixed(1)+':'+lo.toFixed(1), v=mefVal(k,la,lo);
+    if(v==null){ if(!mefQ.includes(k)) mefQ.push(k); continue; }
+    const hi=v>=5000, html=CFG.alt==='ft'?`${Math.floor(v/1000)}<sup>${Math.floor(v%1000/100)}</sup>`:`${Math.round(v*FT/10)*10}<sup>m</sup>`;
+    gGrid.addLayer(L.marker([la+.25,lo+.25],{pane:'aeroGrid',interactive:false,icon:L.divIcon({className:'mef'+(hi?' hi':'')+(z<9?' sm':''),html,iconSize:null})})); }
+  mefRun(); }
+async function mefRun(){ if(mefBusy||!mefQ.length||!navigator.onLine) return; mefBusy=true;
+  while(mefQ.length){ const k=mefQ.shift(); if(MEF[k]!=null) continue; const [la0,lo0]=k.split(':').map(Number), pts=[]; for(let i=0;i<=10;i++) for(let j=0;j<=10;j++) pts.push([la0+i*.05,lo0+j*.05]);
+    let r=[]; try{ r=await fetchElevations(pts); }catch(e){} const v=r.filter(x=>x!=null); if(v.length<pts.length*.6){ mefQ.unshift(k); break; }
+    let mx=Math.max(...v); for(let la=la0;la<la0+.5;la+=.02) for(let lo=lo0;lo<lo0+.5;lo+=.02){ const g=terrGrid(la,lo); if(g!=null&&g>mx) mx=g; }
+    MEF[k]=Math.round(mx); try{ localStorage.setItem('fmn.mef.v1',JSON.stringify(MEF)); }catch(e){} if(aeroOn()) { clearTimeout(AERO.dt); AERO.dt=setTimeout(aeroDraw,400); } await new Promise(r=>setTimeout(r,250)); }
+  mefBusy=false; }
+map.on('moveend',()=>{ if(aeroOn()||gAeroA.getLayers().length){ clearTimeout(AERO.mt); AERO.mt=setTimeout(()=>{ mefQ=[]; aeroDraw(); },150); } });
+/* restricted / prohibited / danger airspace from the chart: warning when entering (laterally and within its vertical limits) */
+const ASPIN=new Set();
+setInterval(()=>{ const p=FLY.pos; if(!p||aeroCfg().warn===false||!AERO.asp.length) return; const now=new Set();
+  AERO.asp.filter(a=>ASP_BAD.has(a.t)).forEach(a=>{ if(!(p.lat>=a.bb[0]-.05&&p.lat<=a.bb[2]+.05&&p.lon>=a.bb[1]-.05&&p.lon<=a.bb[3]+.05)) return; if(!a.rings.some(r=>inPoly(p,r))) return;
+    const lo=limM(a.lo,elAt?elAt(p.lat,p.lon):0), hi=limM(a.hi,elAt?elAt(p.lat,p.lon):0); if(p.alt!=null&&((lo!=null&&p.alt<lo-30)||(hi!=null&&p.alt>hi+30))) return; now.add(a.id);
+    if(!ASPIN.has(a.id)){ toast(t('Entered {z} ({t})',{z:a.name,t:t(ASP_N[a.t])}),true); if(navigator.vibrate) navigator.vibrate([200,100,200]); } });
+  ASPIN.forEach(id=>{ if(!now.has(id)){ const a=AERO.asp.find(x=>x.id===id); if(a) toast(t('Left {z}',{z:a.name})); } }); ASPIN.clear(); now.forEach(x=>ASPIN.add(x)); },3000);
+/* --- layer menu: aeronautical data block --- */
+function aeroMenuHtml(){ const C=aeroCfg(), m=AERO.meta, ck=(k,l)=>`<label class="lchip"><input type="checkbox" data-on="aeroT" data-k="${k}" ${C[k]!==false?'checked':''}>${t(l)}</label>`;
+  return `<div class="lm-h">${t('Aeronautical data')}</div><div class="lchips">${ck('asp','Airspace (FIR, CTA, TMA, CTR)')}${ck('lbl','Airspace names and limits')}${ck('mef','Max elevation figures (MEF)')}${ck('grid','Lat/long grid')}${ck('nav','Navaids')}${ck('rpp','VFR reporting points')}${ck('apt','Airports & heliports')}${ck('obs','Obstacles')}${ck('warn','Warn on entering R / P / D areas')}${ck('all','Show on every map type')}</div>
+  <p class="note" id="aeroStat">${aeroStatTxt()}</p><div class="actions"><button class="btn sm" data-act="aeroDl">${m?t('Update data (openAIP)'):t('Download data (openAIP)')}</button><button class="btn sm" data-act="aeroImp">${t('Import file (GeoJSON, OpenAir)')}</button></div>`; }
+function aeroStatTxt(){ if(AERO.busy) return t('Downloading… {p}',{p:AERO.prog}); if(AERO.err) return esc(AERO.err); const m=AERO.meta; if(!m) return t('No aeronautical data yet — tap Download (internet needed once, then works offline).');
+  return t('Data of {d}: {a} airspaces, {n} navaids, {r} reporting points, {o} obstacles, {p} airports',{d:m.date,a:AERO.asp.length,n:AERO.nav.length,r:AERO.rpp.length,o:AERO.obs.length,p:AERO.apt.length}); }
+function aeroMenuStat(){ const e=$('#aeroStat'); if(e) e.innerHTML=aeroStatTxt(); }
+const _rlm=renderLayerMenu; renderLayerMenu=function(){ _rlm(); const m=$('#layerMenu'); if(!m) return; const d=document.createElement('div'); d.className='aero-menu'; d.innerHTML=aeroMenuHtml();
+  const hs=[...m.querySelectorAll('.lm-h')]; const i=hs.findIndex(h=>h.textContent===t('Topographic')); if(i>=0) m.insertBefore(d,hs[i]); else m.appendChild(d); };
+Object.assign(ON,{ aeroT:el=>{ const C=aeroCfg(); C[el.dataset.k]=el.checked; saveCfg(); aeroDraw(); } });
+Object.assign(ACT,{ aeroDl:()=>aeroDownload(), aeroImp:()=>aeroImport() });
+const _setBase=setBase; setBase=function(k){ _setBase(k); aeroDraw(); if(k==='aero'&&!AERO.meta&&!AERO.busy&&navigator.onLine) aeroDownload(); };
+aeroLoad();
+Object.assign(RU,{'Aeronautical':'Аэронавигационная','Aeronautical chart (ICAO)':'Аэронавигационная карта (ИКАО)','Aeronautical data':'Аэронавигационные данные','Airspace (FIR, CTA, TMA, CTR)':'Воздушное пространство (РПИ, РДС, УВД, диспетч. зоны)','Airspace names and limits':'Названия и границы по высоте',
+ 'Max elevation figures (MEF)':'Макс. высоты по квадратам (MEF)','Lat/long grid':'Сетка широт и долгот','VFR reporting points':'Пункты обязательных донесений ПВП','Airports & heliports':'Аэродромы и вертодромы','Obstacles':'Препятствия','Warn on entering R / P / D areas':'Предупреждать о входе в зоны R / P / D','Show on every map type':'Показывать на всех видах карты',
+ 'Update data (openAIP)':'Обновить данные (openAIP)','Download data (openAIP)':'Загрузить данные (openAIP)','Import file (GeoJSON, OpenAir)':'Импорт файла (GeoJSON, OpenAir)','Downloading… {p}':'Загрузка… {p}',
+ 'No aeronautical data yet — tap Download (internet needed once, then works offline).':'Аэронавигационных данных пока нет — нажмите «Загрузить» (интернет нужен один раз, дальше работает без сети).',
+ 'Data of {d}: {a} airspaces, {n} navaids, {r} reporting points, {o} obstacles, {p} airports':'Данные от {d}: зон {a}, радиосредств {n}, пунктов донесений {r}, препятствий {o}, аэродромов {p}',
+ 'openAIP could not be reached':'Нет связи с openAIP','Aeronautical data updated: {a} airspaces, {n} navaids, {r} reporting points, {o} obstacles':'Аэронавигационные данные обновлены: зон {a}, радиосредств {n}, пунктов {r}, препятствий {o}',
+ 'Nothing recognised in this file.':'В файле ничего не распознано.','Imported {n} objects from {f}':'Импортировано объектов: {n} из {f}','Airspace here':'Воздушное пространство в этой точке','class':'класс',
+ 'Compulsory reporting point':'Пункт обязательного донесения','Reporting point (on request)':'Пункт донесения (по запросу)','Frequency':'Частота','Type':'Тип','No internet connection.':'Нет подключения к интернету.',
+ 'Other':'Прочее','Restricted':'Зона ограничения','Danger':'Опасная зона','Prohibited':'Запретная зона','Control zone':'Диспетчерская зона (CTR)','Terminal area':'Узловой диспетчерский район (TMA)','Temporary reserved':'Временно резервируемая зона','Temporary segregated':'Временно выделенная зона','Airway':'Воздушная трасса','Military training route':'Маршрут боевой подготовки','Alert area':'Зона предупреждения','Warning area':'Зона опасности','Protected area':'Охраняемая зона','Helicopter zone':'Вертолётная зона','Gliding sector':'Зона планеристов','Military training area':'Зона боевой подготовки','Control area':'Диспетчерский район (CTA)','ACC sector':'Сектор РЦ','Sport / recreation':'Спортивная зона','Low overflight restriction':'Ограничение пролёта на малой высоте','Temporary flight restriction':'Временное ограничение полётов','VFR sector':'Сектор ПВП','FIS sector':'Сектор ПИП','Lower traffic area':'Нижний район','Upper traffic area':'Верхний район','Military CTR':'Военная диспетчерская зона','Military ATZ':'Военная зона аэродрома'});
+
 /* ================= boot ================= */
 (()=>{ let seed=null; try{ const tx=$('#fmn-seed').textContent.trim(); if(tx) seed=JSON.parse(tx); }catch(e){}
   const fresh=!lsGet('fmn.mission.v1');
