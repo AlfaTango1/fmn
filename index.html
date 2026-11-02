@@ -594,9 +594,32 @@ body{font-family:var(--f-display)}
 
 .fr-p{position:relative;display:grid;place-items:center}.fr-rot{display:grid;place-items:center;filter:drop-shadow(0 1px 1.2px rgba(0,0,0,.6))}.fr-rot svg{overflow:visible;display:block}
 .fr-ring{position:absolute;inset:0;border:2.6px solid;border-radius:50%}
+
+#tawsBan{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 64px);z-index:1200;padding:10px 18px;border-radius:4px;font:800 17px/1.1 var(--f-display);letter-spacing:.08em;color:#fff;box-shadow:0 4px 18px rgba(0,0,0,.45);pointer-events:none}
+#tawsBan.tw2{background:#E8A400;color:#111} #tawsBan.tw3{background:#E0201B;animation:twb .6s steps(2) infinite}
+@keyframes twb{50%{opacity:.35}}
+#synth{position:fixed;inset:0;z-index:1500;background:#000;display:flex;flex-direction:column}
+#synth[hidden]{display:none}
+#svC{flex:1;width:100%;min-height:0;display:block} #svP{height:150px;width:100%;display:block;border-top:1px solid #234}
+.sv-top{position:absolute;top:calc(env(safe-area-inset-top) + 8px);left:8px;right:8px;display:flex;align-items:center;gap:10px;color:#fff;pointer-events:none}
+.sv-top b{font:700 13px var(--f-display);letter-spacing:.12em;text-transform:uppercase;background:rgba(5,11,23,.7);padding:5px 8px;border-radius:3px}
+.sv-top span{flex:1;text-align:center;font:800 15px var(--f-display);color:#ffb000} .sv-top button{pointer-events:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.chip-b{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:16px;padding:7px 12px;font:600 13px var(--f-ui,inherit);cursor:pointer}
+.chip-b[aria-pressed="true"]{background:var(--accent,#1F6FD1);border-color:var(--accent,#1F6FD1);color:#fff}
+.wxraw{font-size:12px;margin:4px 0 0;white-space:pre-wrap;word-break:break-word;color:var(--muted)} .wxraw.taf{opacity:.85}
+.wx-st span,.wx-grid span{position:absolute;left:36px;top:34px;font:700 11px var(--f-data);color:#111;text-shadow:0 0 3px #fff,0 0 3px #fff}
+.wx-st,.wx-grid{background:none;border:0}
+.tblw{overflow-x:auto} table.wxt{border-collapse:collapse;width:100%;font:12.5px var(--f-data)} .wxt td,.wxt th{border:1px solid var(--line);padding:4px 6px;text-align:left;white-space:nowrap} .wxt th{background:var(--surface-2)}
+.chart-ov{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;max-width:none!important;z-index:2}
+.ci-wrap{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden} .ci-wrap img{display:block;width:100%;cursor:crosshair}
+.ci-pt{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:#E0201B;color:#fff;font:700 12px/24px var(--f-data);text-align:center;font-style:normal;border:2px solid #fff;pointer-events:none}
+.ci-pt.cur{background:#1F6FD1}
+pre.fpl{font:13px/1.4 var(--f-data);white-space:pre-wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:10px;margin:6px 0}
+#acDet summary{list-style:none;display:inline-flex;margin:6px 0} #acDet textarea{width:100%;font:13px var(--f-data)}
 </style>
 </head>
-<body>
+<body><div id="tawsBan" hidden></div>
 <div id="fmnIntro" role="dialog" aria-label="UzAIRFORCE Electronic Kneeboard">
 <style>
 #fmnIntro{position:fixed;inset:0;z-index:100000;background:#050b17;color:#7fa6d9;display:flex;flex-direction:column;align-items:center;justify-content:space-between;
@@ -2146,6 +2169,7 @@ function vMore(){
   <h3>${t('Navigation')}</h3>
   <div class="form">
     <label class="f"><span>${t('Rounded turns on routes (by speed and bank)')}</span>${sel('rteRound',CFG.rteRound===false?'0':'1',[['1',t('Yes')],['0',t('No')]])}</label>
+    <label class="f"><span>${t('Terrain warning (TAWS)')}</span>${sel('taws',CFG.taws===false?'0':'1',[['1',t('Yes')],['0',t('No')]])}</label><label class="f"><span>${t('Voice warnings')}</span>${sel('tawsVoice',CFG.tawsVoice===false?'0':'1',[['1',t('Yes')],['0',t('No')]])}</label>
     <label class="f"><span>${t('Courses and bearings')}</span>${sel('north',CFG.north||'T',[['T',t('True (from true north)')],['M',t('Magnetic (with variation)')]])}<span class="hint">${t('All track angles, headings, bearings and radials are shown from the selected north.')}</span></label>
     <div class="grid2"><label class="f"><span>${t('Default bank angle (°)')}</span><input class="num" data-on="cfg" data-k="bank" inputmode="decimal" value="${CFG.bank}"></label><label class="f"><span>${t('Default magnetic var (°E +)')}</span><input class="num" data-on="cfg" data-k="magVar" inputmode="decimal" value="${CFG.magVar}"></label></div>
     <div class="actions" style="margin:0"><button class="btn" data-act="cfgVar">${t('Look up here')}</button></div>
@@ -2940,7 +2964,7 @@ function renderSoft(){ const el=$('#gsoft'); if(!el) return; const open=$('#shee
 function vHome(){
   const tile=(act,ic,lbl,cls,extra='')=>`<button class="ht ${cls}" data-act="${act}" ${extra}>${svgI(ic,1.7)}<span>${t(lbl)}</span></button>`;
   return `<div class="hgrid">${tile('homeGo','fpl','Flight plan','mag','data-k="routes"')}${tile('homeGo','wpt','Waypoints','cy','data-k="points"')}${tile('homeGo','zone','Zones','amb','data-k="zones"')}${tile('tab','ad','Aerodromes','cy','data-tab="ad"')}
-  ${tile('nrstOpen','nrst','Nearest','grn')}${tile('dtoOpen','fpl','Direct-To','mag')}${tile('tab','fly','Flight','grn','data-tab="fly"')}${tile('tab','tools','Tools','cy','data-tab="tools"')}${tile('tab','chart','Charts','mag','data-tab="chart"')}
+  ${tile('nrstOpen','nrst','Nearest','grn')}${tile('dtoOpen','fpl','Direct-To','mag')}${tile('tab','fly','Flight','grn','data-tab="fly"')}${tile('tab','tools','Tools','cy','data-tab="tools"')}${tile('tab','chart','Charts','mag','data-tab="chart"')}${tile('tab','wx','Weather','cy','data-tab="wx"')}${tile('svOpen','sv','Synthetic view','grn')}${tile('tab','brief','Briefing','amb','data-tab="brief"')}
   ${tile('homeMeasure','meas','Measure','cy')}${tile('homeLayers','layers','Map layers','grn')}${tile('tab','xfer','Transfer','cy','data-tab="more"')}${tile('tab','setup','Setup','','data-tab="more"')}</div>
   <p class="note" style="margin-top:12px">${t('Tap a data field at the top of the screen to change what it shows.')}</p>`;
 }
@@ -3481,6 +3505,308 @@ ACT.trfTog=()=>{ CFG.libShow.trf=CFG.libShow.trf!==true; saveCfg(); TRF.t=0; dra
 { const _ls=ON.libShow; ON.libShow=el=>{ _ls(el); if(el.dataset.k==='trf'){ TRF.t=0; drawTrf(); } }; }
 
 
+/* ========================================================================== */
+/*  WEATHER · TERRAIN (profile, TAWS, synthetic view) · CHART OVERLAYS · BRIEFING, FPL, W&B  */
+/* ========================================================================== */
+const nowVs=()=>{ const h=FLY.hist; if(!h||h.length<2) return null; const a=h[0], b=h[h.length-1]; if(a.alt==null||b.alt==null||b.t-a.t<2000) return null; return (b.alt-a.alt)/((b.t-a.t)/1000); };
+/* ---------- elevation cache for terrain look-ahead (0.01° grid, filled online, or the downloaded terrain) ---------- */
+const ELC=new Map(); let elBusy=false;
+const elKey=(lat,lon)=>Math.round(lat/0.01)+':'+Math.round(lon/0.01);
+function elAt(lat,lon){ const g=terrGrid(lat,lon); if(g!=null) return g; const k=elKey(lat,lon); if(TERR.map.has(k)) return TERR.map.get(k); return ELC.has(k)?ELC.get(k):null; }
+async function elFill(pts){ if(elBusy||!navigator.onLine) return; const need=[], seen=new Set(); pts.forEach(([la,lo])=>{ const k=elKey(la,lo); if(!seen.has(k)&&!ELC.has(k)&&!TERR.map.has(k)&&terrGrid(la,lo)==null){ seen.add(k); need.push(k); } });
+  if(!need.length) return; elBusy=true; try{ const q=need.slice(0,200).map(k=>k.split(':').map(v=>+v*0.01)); const r=await fetchElevations(q); r.forEach((e,i)=>{ if(e!=null) ELC.set(need[i],e); }); }catch(e){} elBusy=false; }
+
+/* ---------- TAWS: terrain look-ahead along the track ---------- */
+const TAWS={lvl:0,t:0,clr:null,tt:null,last:0};
+function tawsTick(){ const p=FLY.pos, ban=$('#tawsBan'); if(CFG.taws===false||CFG.taws==='0'||!p||p.alt==null||FLY.gs==null||FLY.gs<15||FLY.trk==null){ TAWS.lvl=0; if(ban) ban.hidden=true; return; }
+  const vs=nowVs()||0, pts=[]; for(let t=5;t<=120;t+=5){ const d=FLY.gs*t, q=direct(p.lat,p.lon,FLY.trk,d); pts.push({t,d,lat:q.lat,lon:q.lon,alt:p.alt+vs*t}); }
+  elFill(pts.map(x=>[x.lat,x.lon])); let lvl=0, mn=null, tt=null; const here=elAt(p.lat,p.lon);
+  pts.forEach(x=>{ const e=elAt(x.lat,x.lon); if(e==null) return; const c=x.alt-e; if(mn==null||c<mn){ mn=c; tt=x.t; } if(c<0&&x.t<=40) lvl=Math.max(lvl,3); else if((c<0&&x.t<=120)||(c<100&&x.t<=60)) lvl=Math.max(lvl,2); else if(c<150&&x.t<=120) lvl=Math.max(lvl,1); });
+  if(here!=null&&p.alt-here<50&&FLY.gs>40) lvl=Math.max(lvl,2);
+  TAWS.lvl=lvl; TAWS.clr=mn; TAWS.tt=tt; if(!ban) return; ban.hidden=lvl<2; if(lvl>=2){ ban.className=lvl===3?'tw3':'tw2'; ban.textContent=lvl===3?t('PULL UP — TERRAIN'):t('CAUTION TERRAIN')+(mn!=null?` · ${fmtAlt(mn)} ${t('in')} ${tt} s`:'');
+    if(Date.now()-TAWS.last>(lvl===3?3000:8000)){ TAWS.last=Date.now(); if(navigator.vibrate) navigator.vibrate(lvl===3?[300,100,300,100,300]:[250,150,250]); try{ if(CFG.tawsVoice!==false&&CFG.tawsVoice!=='0'&&window.speechSynthesis){ const u=new SpeechSynthesisUtterance(lvl===3?'Pull up. Terrain.':'Caution, terrain.'); u.lang='en-US'; u.rate=1.05; speechSynthesis.cancel(); speechSynthesis.speak(u); } }catch(e){} } } }
+setInterval(()=>{ try{ tawsTick(); }catch(e){} },2000);
+
+/* ---------- synthetic view: artificial horizon over terrain, speed / altitude tapes, profile ahead ---------- */
+const SV={on:false,raf:null,trkPrev:null,tPrev:0,rate:0};
+function svOpen(){ let el=$('#synth'); if(!el){ el=document.createElement('div'); el.id='synth'; el.innerHTML=`<canvas id="svC"></canvas><canvas id="svP"></canvas><div class="sv-top"><b>${t('Synthetic view')}</b><span id="svMsg"></span><button class="btn sm" data-act="svClose">✕</button></div>`; document.body.appendChild(el); }
+  el.hidden=false; SV.on=true; svLoop(); }
+function svLoop(){ if(!SV.on) return; try{ svDraw(); }catch(e){} SV.raf=setTimeout(svLoop,500); }
+function svFan(p,trk){ const out=[]; for(let b=-40;b<=40;b+=5) for(const d of [400,800,1300,2000,3000,4200,5600,7500,10000,13000,17000,22000]) { const q=direct(p.lat,p.lon,n360(trk+b),d); out.push({b,d,lat:q.lat,lon:q.lon}); } return out; }
+function svDraw(){ const c=$('#svC'), cp=$('#svP'); if(!c) return; const dpr=window.devicePixelRatio||1, W=c.clientWidth, H=c.clientHeight; c.width=W*dpr; c.height=H*dpr; const g=c.getContext('2d'); g.scale(dpr,dpr);
+  const p=FLY.pos, msg=$('#svMsg'); if(!p||p.alt==null){ g.fillStyle='#0b1f3f'; g.fillRect(0,0,W,H); g.fillStyle='#fff'; g.font='600 16px '+getComputedStyle(document.body).fontFamily; g.textAlign='center'; g.fillText(t('Start GPS or the simulator in the Flight tab'),W/2,H/2); if(msg) msg.textContent=''; svProfile(cp,null); return; }
+  const trk=FLY.trk||0, gs=FLY.gs||0, vs=nowVs()||0, now=Date.now();
+  if(SV.trkPrev!=null&&now-SV.tPrev>400){ let dt=((trk-SV.trkPrev+540)%360)-180; SV.rate=SV.rate*.6+(dt/((now-SV.tPrev)/1000))*.4; } if(now-SV.tPrev>400){ SV.trkPrev=trk; SV.tPrev=now; }
+  const bank=Math.max(-60,Math.min(60,Math.atan(gs*SV.rate*Math.PI/180/9.81)*180/Math.PI)), fpa=gs>10?Math.atan2(vs,gs)*180/Math.PI:0;
+  const FOV=80, ppd=W/FOV, cx=W/2, cy=H*0.45+fpa*ppd*0.0; const fan=svFan(p,trk); elFill(fan.map(x=>[x.lat,x.lon]));
+  g.save(); g.translate(cx,cy); g.rotate(-bank*Math.PI/180);
+  const hz=0; const R=Math.hypot(W,H); g.fillStyle='#3d7fd6'; g.fillRect(-R,-R,2*R,R+hz); const gr=g.createLinearGradient(0,-R,0,0); gr.addColorStop(0,'#123a7a'); gr.addColorStop(1,'#5a9be6'); g.fillStyle=gr; g.fillRect(-R,-R,2*R,R);
+  g.fillStyle='#6b5232'; g.fillRect(-R,hz,2*R,R);
+  /* terrain: for each range ring (far → near) draw the ridge line across bearings */
+  const rings=[22000,17000,13000,10000,7500,5600,4200,3000,2000,1300,800,400]; let known=0;
+  rings.forEach(d=>{ const row=fan.filter(x=>x.d===d); g.beginPath(); g.moveTo((-45)*ppd,R); let ok=0, maxC=-1e9;
+    row.forEach(x=>{ const e=elAt(x.lat,x.lon); if(e==null) return; ok++; const ang=Math.atan2(e-p.alt,d)*180/Math.PI; const clr=p.alt-e; if(-clr>maxC) maxC=-clr; g.lineTo(x.b*ppd,-ang*ppd); });
+    if(ok<3) return; known+=ok; g.lineTo(45*ppd,R); g.closePath(); const sh=0.35+0.65*(1-d/22000);
+    g.fillStyle=maxC>-0?`rgba(${Math.round(200*sh+40)},40,30,1)`:maxC>-150?`rgba(${Math.round(190*sh+50)},${Math.round(150*sh+40)},30,1)`:`rgb(${Math.round(70*sh+35)},${Math.round(110*sh+40)},${Math.round(50*sh+25)})`;
+    g.fill(); g.strokeStyle='rgba(255,255,255,.35)'; g.lineWidth=1; g.stroke(); });
+  g.strokeStyle='#fff'; g.lineWidth=2; g.beginPath(); g.moveTo(-R,0); g.lineTo(R,0); g.stroke();
+  g.fillStyle='#fff'; g.font='600 12px '+getComputedStyle(document.body).fontFamily; g.textAlign='center';
+  for(let a=-20;a<=20;a+=5){ if(!a) continue; const y=-a*ppd*1.0, w=a%10?20:40; g.beginPath(); g.moveTo(-w,y); g.lineTo(w,y); g.stroke(); if(!(a%10)){ g.fillText(Math.abs(a),-w-14,y+4); g.fillText(Math.abs(a),w+14,y+4); } }
+  /* next waypoint / direct-to target as a magenta marker on the horizon */
+  const tg=FLY.nav&&FLY.nav.tgt; if(tg){ const iv=inverse(p.lat,p.lon,tg.lat,tg.lon), rb=((iv.az1-trk+540)%360)-180; if(Math.abs(rb)<45){ const ang=Math.atan2((tg.elev||0)-p.alt,iv.dist)*180/Math.PI; g.fillStyle='#ff5cc8'; g.beginPath(); g.moveTo(rb*ppd,-ang*ppd-10); g.lineTo(rb*ppd+7,-ang*ppd); g.lineTo(rb*ppd,-ang*ppd+10); g.lineTo(rb*ppd-7,-ang*ppd); g.fill(); g.fillText(tg.name||'',rb*ppd,-ang*ppd-14); } }
+  g.restore();
+  /* aircraft symbol and flight-path marker */
+  g.strokeStyle='#ffd21f'; g.lineWidth=4; g.beginPath(); g.moveTo(cx-70,cy); g.lineTo(cx-25,cy); g.lineTo(cx-12,cy+10); g.moveTo(cx+70,cy); g.lineTo(cx+25,cy); g.lineTo(cx+12,cy+10); g.stroke();
+  const fy=cy-fpa*ppd; g.strokeStyle='#5ee0ff'; g.lineWidth=2.4; g.beginPath(); g.arc(cx,fy,7,0,2*Math.PI); g.moveTo(cx-18,fy); g.lineTo(cx-7,fy); g.moveTo(cx+7,fy); g.lineTo(cx+18,fy); g.moveTo(cx,fy-7); g.lineTo(cx,fy-14); g.stroke();
+  /* bank scale */
+  g.save(); g.translate(cx,cy); g.strokeStyle='#fff'; g.lineWidth=2; g.beginPath(); g.arc(0,0,H*0.36,(-90-60)*Math.PI/180,(-90+60)*Math.PI/180); g.stroke(); [-60,-45,-30,-20,-10,0,10,20,30,45,60].forEach(a=>{ const r=H*0.36, l=a%30?8:14; g.save(); g.rotate(a*Math.PI/180); g.beginPath(); g.moveTo(0,-r); g.lineTo(0,-r-l); g.stroke(); g.restore(); });
+  g.rotate(-bank*Math.PI/180); g.fillStyle='#ffd21f'; g.beginPath(); g.moveTo(0,-H*0.36+2); g.lineTo(-7,-H*0.36+14); g.lineTo(7,-H*0.36+14); g.fill(); g.restore();
+  /* tapes */
+  const font='700 15px '+getComputedStyle(document.body).fontFamily; g.font=font;
+  const box=(x,y,w,h,txt,al)=>{ g.fillStyle='rgba(5,11,23,.82)'; g.fillRect(x,y,w,h); g.strokeStyle='#5ee0ff'; g.lineWidth=1.5; g.strokeRect(x,y,w,h); g.fillStyle='#fff'; g.textAlign=al||'center'; g.fillText(txt,al==='left'?x+6:x+w/2,y+h/2+5); };
+  const spd=Math.round(spdOut(gs)), alt=CFG.alt==='ft'?Math.round(p.alt/0.3048):Math.round(p.alt);
+  box(8,cy-18,74,36,String(spd)); g.font='600 11px '+getComputedStyle(document.body).fontFamily; g.fillStyle='#cfe'; g.textAlign='center'; g.fillText(ab('GS')+' '+spdU(),45,cy-24); g.font=font;
+  box(W-92,cy-18,84,36,String(alt)); g.font='600 11px '+getComputedStyle(document.body).fontFamily; g.fillStyle='#cfe'; g.fillText(ab('ALT')+' '+ul(CFG.alt),W-50,cy-24);
+  const vsTxt=CFG.alt==='ft'?Math.round(vs/0.3048*60/10)*10+' fpm':vs.toFixed(1)+' m/s'; g.fillText('Vy '+vsTxt,W-50,cy+34); g.font=font;
+  const hdg=Math.round(n360(trk-curVar())); box(cx-34,8,68,30,String(hdg).padStart(3,'0')+'°');
+  const te=elAt(p.lat,p.lon); if(te!=null){ g.font='700 13px '+getComputedStyle(document.body).fontFamily; g.fillStyle=p.alt-te<150?'#ffb000':'#fff'; g.textAlign='right'; g.fillText(t('AGL')+' '+fmtAlt(p.alt-te),W-10,cy+56); }
+  if(msg) msg.textContent=known<40?t('loading terrain…'):(TAWS.lvl>=2?(TAWS.lvl===3?t('PULL UP — TERRAIN'):t('CAUTION TERRAIN')):'');
+  svProfile(cp,p); }
+/* vertical profile ahead: terrain along the track (or the active route), aircraft altitude and its projection */
+function svProfile(c,p){ if(!c) return; const dpr=window.devicePixelRatio||1, W=c.clientWidth, H=c.clientHeight; c.width=W*dpr; c.height=H*dpr; const g=c.getContext('2d'); g.scale(dpr,dpr); g.fillStyle='#07101f'; g.fillRect(0,0,W,H); if(!p) return;
+  const D=Math.max(15000,(FLY.gs||60)*180), N=36, vs=nowVs()||0, pts=[]; for(let i=0;i<=N;i++){ const d=D*i/N, q=direct(p.lat,p.lon,FLY.trk||0,d); pts.push({d,lat:q.lat,lon:q.lon,e:null}); }
+  /* corridor: highest terrain within ±1 km either side */
+  const side=[]; pts.forEach(x=>{ [-1000,1000].forEach(o=>{ const q=direct(x.lat,x.lon,n360((FLY.trk||0)+90),o); side.push([q.lat,q.lon]); }); }); elFill(pts.map(x=>[x.lat,x.lon]).concat(side));
+  pts.forEach((x,i)=>{ const es=[elAt(x.lat,x.lon),elAt(...side[2*i]),elAt(...side[2*i+1])].filter(v=>v!=null); x.e=es.length?Math.max(...es):null; });
+  const es=pts.map(x=>x.e).filter(v=>v!=null), top=Math.max(p.alt+300,...es,0)+100, bot=Math.max(0,Math.min(...(es.length?es:[0]),p.alt)-200);
+  const X=d=>40+(W-50)*d/D, Y=e=>H-14-(H-30)*(e-bot)/(top-bot);
+  g.beginPath(); g.moveTo(X(0),H); pts.forEach(x=>{ if(x.e!=null) g.lineTo(X(x.d),Y(x.e)); }); g.lineTo(X(D),H); g.closePath(); g.fillStyle='#4b5f34'; g.fill();
+  pts.forEach((x,i)=>{ if(x.e==null||!i) return; const tt=x.d/Math.max(FLY.gs||1,1), a=p.alt+vs*tt, c2=a-x.e; if(c2<150){ g.fillStyle=c2<0?'#E0201B':'#F0A000'; g.fillRect(X(pts[i-1].d),Y(x.e),X(x.d)-X(pts[i-1].d),H-Y(x.e)); } });
+  g.strokeStyle='#5ee0ff'; g.lineWidth=2; g.setLineDash([6,4]); g.beginPath(); g.moveTo(X(0),Y(p.alt)); g.lineTo(X(D),Y(p.alt+vs*D/Math.max(FLY.gs||1,1))); g.stroke(); g.setLineDash([]);
+  g.fillStyle='#ffd21f'; g.beginPath(); g.moveTo(X(0)+8,Y(p.alt)); g.lineTo(X(0)-6,Y(p.alt)-6); g.lineTo(X(0)-6,Y(p.alt)+6); g.fill();
+  g.fillStyle='#9fb3d6'; g.font='600 10.5px '+getComputedStyle(document.body).fontFamily; g.textAlign='left'; g.fillText(fmtAlt(top),2,12); g.fillText(fmtAlt(bot),2,H-4); g.textAlign='right'; g.fillText(fmtDist(D),W-4,H-4); g.textAlign='center'; g.fillText(t('Terrain profile ahead (±1 km corridor)'),W/2,12); }
+Object.assign(ACT,{ svOpen:()=>svOpen(), svClose:()=>{ SV.on=false; clearTimeout(SV.raf); const e=$('#synth'); if(e) e.hidden=true; } });
+
+/* ---------- weather: METAR/TAF, radar and satellite, model clouds and winds ---------- */
+const WX={st:[],t:0,err:'',rv:null,lyr:{},grid:null,gridT:0};
+const gWx=L.layerGroup().addTo(map);
+const fltCol=c=>({VFR:'#2F9E44',MVFR:'#1F6FD1',IFR:'#E0201B',LIFR:'#C2255C'}[c]||'#8a94a6');
+async function wxFetch(force){ if(!navigator.onLine){ WX.err=t('no internet'); return; } if(!force&&Date.now()-WX.t<5*60e3&&WX.st.length) return;
+  const c=FLY.pos||(q=>({lat:q.lat,lon:q.lng}))(map.getCenter()); const bb=[c.lat-4,c.lon-6,c.lat+4,c.lon+6].map(v=>v.toFixed(2)).join(',');
+  try{ const m=await httpJson(`https://aviationweather.gov/api/data/metar?bbox=${bb}&format=json&taf=true&hours=3`); const seen=new Map(); (Array.isArray(m)?m:[]).forEach(o=>{ const k=o.icaoId; if(!seen.has(k)||(o.obsTime||0)>(seen.get(k).obsTime||0)) seen.set(k,o); });
+    WX.st=[...seen.values()]; WX.t=Date.now(); WX.err=''; }catch(e){ WX.err='aviationweather.gov: '+(e.message||e); }
+  wxDraw(); if(VIEW.tab==='wx') renderPanel(); }
+function wxDecode(o){ const w=o.wdir==null?'—':(o.wdir==='VRB'?'VRB':String(o.wdir).padStart(3,'0'))+'/'+(o.wspd??'—')+(o.wgst?'G'+o.wgst:'')+' kt';
+  const cl=(o.clouds||[]).map(c=>c.cover+(c.base!=null?String(Math.round(c.base/100)).padStart(3,'0'):'')).join(' ')||'—';
+  const vis=o.visib==null?'—':(typeof o.visib==='string'?o.visib:(o.visib>=6?'≥10 km':Math.round(o.visib*1.609)+' km'));
+  const q=o.altim!=null?Math.round(o.altim)+' hPa · '+Math.round(o.altim/1.333224)+' mm':'—'; return {w,cl,vis,q,tmp:o.temp!=null?`${o.temp}°/${o.dewp??'—'}°`:'—'}; }
+function wxBarb(dir,kt,col){ if(dir==null||kt==null||dir==='VRB') return ''; let s=`<g transform="rotate(${dir})"><path d="M0 0V-26" stroke="${col}" stroke-width="2"/>`; let v=Math.round(kt/5)*5, y=-26;
+  while(v>=50){ s+=`<path d="M0 ${y}l10 3-10 3z" fill="${col}"/>`; y+=7; v-=50; } while(v>=10){ s+=`<path d="M0 ${y}l11-5" stroke="${col}" stroke-width="2"/>`; y+=5; v-=10; } if(v>=5) s+=`<path d="M0 ${y}l6-3" stroke="${col}" stroke-width="2"/>`; return s+'</g>'; }
+function wxDraw(){ gWx.clearLayers(); const L_=CFG.wxl||{};
+  if(L_.st) WX.st.forEach(o=>{ if(o.lat==null) return; const col=fltCol(o.fltCat); const ic=L.divIcon({className:'wx-st',html:`<svg viewBox="-30 -30 60 60" width="60" height="60">${wxBarb(o.wdir,o.wspd,'#111')}<circle r="6" fill="${col}" stroke="#fff" stroke-width="2"/></svg><span>${esc(o.icaoId)}</span>`,iconSize:[60,60],iconAnchor:[30,30]});
+    const m=L.marker([o.lat,o.lon],{icon:ic,zIndexOffset:300,bubblingMouseEvents:false}); m.on('click',()=>{ const d=wxDecode(o); L.popup({maxWidth:330}).setLatLng([o.lat,o.lon]).setContent(`<div class="pop"><h4>${esc(o.icaoId)} <span class="badge" style="background:${col};color:#fff">${esc(o.fltCat||'—')}</span></h4><div class="t">${esc(o.name||'')}</div><p class="mono wxraw">${esc(o.rawOb||'')}</p>${o.rawTaf?`<p class="mono wxraw">${esc(o.rawTaf)}</p>`:''}<dl class="kv"><dt>${t('Wind')}</dt><dd>${d.w}</dd><dt>${t('Visibility')}</dt><dd>${d.vis}</dd><dt>${t('Clouds')}</dt><dd>${d.cl}</dd><dt>QNH</dt><dd>${d.q}</dd><dt>T/Td</dt><dd>${d.tmp}</dd></dl></div>`).openOn(map); }); gWx.addLayer(m); });
+  if(L_.grid&&WX.grid) WX.grid.forEach(c=>{ if(L_.cl&&c.cc!=null&&c.cc>10) gWx.addLayer(L.rectangle([[c.lat-c.h/2,c.lon-c.w/2],[c.lat+c.h/2,c.lon+c.w/2]],{stroke:false,fillColor:'#fff',fillOpacity:Math.min(.6,c.cc/160),interactive:false}));
+    if(L_.wind&&c.wd!=null) gWx.addLayer(L.marker([c.lat,c.lon],{interactive:false,icon:L.divIcon({className:'wx-grid',html:`<svg viewBox="-30 -30 60 60" width="60" height="60">${wxBarb(c.wd,c.ws/1.852,'#0b1f3f')}<circle r="2.5" fill="#0b1f3f"/></svg><span>${Math.round(c.ws)}</span>`,iconSize:[60,60],iconAnchor:[30,30]})})); }); }
+const WXLEV={sfc:'10m',850:'850hPa',700:'700hPa',500:'500hPa',300:'300hPa'};
+async function wxGrid(){ const L_=CFG.wxl||{}; if(!(L_.cl||L_.wind)||!navigator.onLine) return; const b=map.getBounds(), n=7, la0=b.getSouth(), la1=b.getNorth(), lo0=b.getWest(), lo1=b.getEast(), h=(la1-la0)/n, w=(lo1-lo0)/n, cells=[];
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) cells.push({lat:la0+h*(i+.5),lon:lo0+w*(j+.5),h,w}); const lev=WXLEV[L_.lev||'sfc'];
+  const vars=lev==='10m'?'wind_speed_10m,wind_direction_10m,cloud_cover':`wind_speed_${lev},wind_direction_${lev},cloud_cover`;
+  try{ const j=await httpJson(`https://api.open-meteo.com/v1/forecast?latitude=${cells.map(c=>c.lat.toFixed(2)).join(',')}&longitude=${cells.map(c=>c.lon.toFixed(2)).join(',')}&current=${vars}&wind_speed_unit=kmh`);
+    const arr=Array.isArray(j)?j:[j]; arr.forEach((r,i)=>{ const c=cells[i], cu=r&&r.current; if(!cu) return; c.ws=cu[`wind_speed_${lev}`]; c.wd=cu[`wind_direction_${lev}`]; c.cc=cu.cloud_cover; }); WX.grid=cells; WX.gridT=Date.now(); }catch(e){ WX.err='open-meteo: '+(e.message||e); }
+  wxDraw(); }
+let rvLayer=null;
+async function wxRadar(){ const L_=CFG.wxl||{}; if(rvLayer){ map.removeLayer(rvLayer); rvLayer=null; } if(!(L_.radar||L_.sat)||!navigator.onLine) return;
+  try{ const j=WX.rv&&Date.now()-WX.rv.t<10*60e3?WX.rv:Object.assign(await httpJson('https://api.rainviewer.com/public/weather-maps.json'),{t:Date.now()}); WX.rv=j;
+    const fr=L_.sat?(j.satellite&&j.satellite.infrared||[]).slice(-1)[0]:(j.radar&&j.radar.past||[]).slice(-1)[0]; if(!fr){ toast(L_.sat?t('Satellite images are not available now.'):t('Radar images are not available now.')); return; }
+    const u=j.host+fr.path+(L_.sat?'/256/{z}/{x}/{y}/0/0_0.png':'/256/{z}/{x}/{y}/2/1_1.png'); rvLayer=L.tileLayer(u,{opacity:.65,maxNativeZoom:7,maxZoom:18,zIndex:5,attribution:'RainViewer'}).addTo(map); }catch(e){ WX.err='RainViewer: '+(e.message||e); } }
+map.on('moveend',()=>{ const L_=CFG.wxl||{}; if(L_.cl||L_.wind){ clearTimeout(WX.mt); WX.mt=setTimeout(wxGrid,600); } });
+setInterval(()=>{ const L_=CFG.wxl||{}; if(L_.st&&Date.now()-WX.t>10*60e3) wxFetch(true); if((L_.cl||L_.wind)&&Date.now()-WX.gridT>30*60e3) wxGrid(); },60000);
+function wxNear(){ const c=FLY.pos||(q=>({lat:q.lat,lon:q.lng}))(map.getCenter()); return WX.st.filter(o=>o.lat!=null).map(o=>({o,d:inverse(c.lat,c.lon,o.lat,o.lon).dist})).sort((a,b)=>a.d-b.d).slice(0,12); }
+function vWx(){ const L_=CFG.wxl||{}, ch=(k,l)=>`<button class="chip-b" aria-pressed="${!!L_[k]}" data-act="wxL" data-k="${k}">${t(l)}</button>`;
+  const rows=wxNear().map(({o,d})=>{ const x=wxDecode(o); return `<li class="crow wxrow"><div class="row" style="cursor:default;display:block"><div style="display:flex;justify-content:space-between;align-items:center"><b>${esc(o.icaoId)} <span class="badge" style="background:${fltCol(o.fltCat)};color:#fff">${esc(o.fltCat||'—')}</span> <small>${esc(o.name||'')}</small></b><small>${fmtDist(d)}</small></div>
+    <small>${t('Wind')} ${x.w} · ${t('Vis')} ${x.vis} · ${x.cl} · QNH ${x.q} · ${x.tmp}</small><p class="mono wxraw">${esc(o.rawOb||'')}</p>${o.rawTaf?`<p class="mono wxraw taf">${esc(o.rawTaf)}</p>`:''}</div></li>`; }).join('');
+  return `<div class="chips">${ch('st','Stations METAR/TAF')}${ch('radar','Rain radar')}${ch('sat','Satellite (IR)')}${ch('cl','Clouds (model)')}${ch('wind','Wind (model)')}</div>
+  ${L_.wind?`<div class="seg" style="margin:4px 0 8px">${['sfc','850','700','500','300'].map(k=>`<button aria-pressed="${(L_.lev||'sfc')===k}" data-act="wxLev" data-k="${k}">${k==='sfc'?t('Surface'):k+' hPa'}</button>`).join('')}</div>`:''}
+  <div class="actions"><button class="btn" data-act="wxRef">${t('Refresh')}</button><button class="btn" data-act="wxPt">${t('Forecast for map centre')}</button></div>
+  ${WX.err?`<p class="note st-warn">${esc(WX.err)}</p>`:''}<div id="wxPt"></div>
+  <h3>METAR / TAF</h3>${rows?`<ul class="list">${rows}</ul>`:`<p class="note">${WX.t?t('No reporting stations in this area.'):t('Tap Refresh to load reports (internet needed).')}</p>`}
+  <p class="note">${t('Reports: aviationweather.gov (NOAA). Model data: Open-Meteo. Radar and satellite: RainViewer. Military aerodromes usually do not publish METAR — use the duty forecaster for official weather.')}</p>`; }
+Object.assign(ACT,{
+  wxL:d=>{ CFG.wxl=Object.assign({},CFG.wxl||{}); CFG.wxl[d.k]=!CFG.wxl[d.k]; if(d.k==='radar'&&CFG.wxl.radar) CFG.wxl.sat=false; if(d.k==='sat'&&CFG.wxl.sat) CFG.wxl.radar=false; CFG.wxl.grid=CFG.wxl.cl||CFG.wxl.wind; saveCfg();
+    if(d.k==='st'&&CFG.wxl.st) wxFetch(); if(d.k==='radar'||d.k==='sat') wxRadar(); if(d.k==='cl'||d.k==='wind') wxGrid(); wxDraw(); renderPanel(); },
+  wxLev:d=>{ CFG.wxl=Object.assign({},CFG.wxl||{},{lev:d.k}); saveCfg(); wxGrid(); renderPanel(); },
+  wxRef:()=>{ WX.t=0; wxFetch(true); wxGrid(); wxRadar(); toast(t('Loading weather…')); },
+  wxPt:async()=>{ const c=map.getCenter(), el=$('#wxPt'); if(el) el.innerHTML=`<p class="note">${t('Loading…')}</p>`;
+    try{ const j=await httpJson(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat.toFixed(3)}&longitude=${c.lng.toFixed(3)}&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,precipitation,visibility&forecast_days=3&timezone=auto`);
+      const h=j.hourly, rows=[]; for(let i=0;i<h.time.length;i+=3) rows.push(`<tr><td>${h.time[i].slice(5,13).replace('T',' ')}</td><td>${Math.round(h.temperature_2m[i])}°</td><td>${String(Math.round(h.wind_direction_10m[i])).padStart(3,'0')}/${Math.round(h.wind_speed_10m[i])}${h.wind_gusts_10m[i]>h.wind_speed_10m[i]+15?'G'+Math.round(h.wind_gusts_10m[i]):''}</td><td>${h.cloud_cover[i]}%</td><td>${h.precipitation[i]}</td><td>${h.visibility?Math.round(h.visibility[i]/1000):'—'}</td></tr>`);
+      if(el) el.innerHTML=`<h3>${t('Forecast')} ${fmtLL(c.lat,c.lng)}</h3><div class="tblw"><table class="wxt"><tr><th>${t('Time')}</th><th>T</th><th>${t('Wind')} km/h</th><th>${t('Clouds')}</th><th>mm</th><th>${t('Vis')} km</th></tr>${rows.join('')}</table></div>`; }catch(e){ if(el) el.innerHTML=`<p class="note st-warn">${esc(String(e.message||e))}</p>`; } }
+});
+
+/* ---------- georeferenced chart images over the map ---------- */
+const CDB={db:null,open(){ if(this.db) return Promise.resolve(this.db); return new Promise((res,rej)=>{ const r=indexedDB.open('fmn-charts',1); r.onupgradeneeded=()=>r.result.createObjectStore('c'); r.onsuccess=()=>{ this.db=r.result; res(this.db); }; r.onerror=()=>rej(r.error); }); },
+  async put(k,v){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('c','readwrite'); tx.objectStore('c').put(v,k); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
+  async get(k){ const db=await this.open(); return new Promise(res=>{ const q=db.transaction('c').objectStore('c').get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>res(null); }); },
+  async del(k){ const db=await this.open(); return new Promise(res=>{ const tx=db.transaction('c','readwrite'); tx.objectStore('c').delete(k); tx.oncomplete=res; }); }};
+function chartsMeta(){ if(!Array.isArray(LIB.charts)) LIB.charts=[]; return LIB.charts; }
+/* image pixel → map pixel transform: similarity from 2 points, affine from 3 */
+function chartMatrix(ch){ const P=ch.gcp.filter(g=>g.lat!=null).slice(0,3).map(g=>({x:g.x,y:g.y,p:map.latLngToLayerPoint([g.lat,g.lon])})); if(P.length<2) return null;
+  if(P.length===2){ const [A,B]=P, wx=B.x-A.x, wy=B.y-A.y, zx=B.p.x-A.p.x, zy=B.p.y-A.p.y, den=wx*wx+wy*wy; const ar=(zx*wx+zy*wy)/den, ai=(zy*wx-zx*wy)/den; return [ar,ai,-ai,ar,A.p.x-(ar*A.x-ai*A.y),A.p.y-(ai*A.x+ar*A.y)]; }
+  const [A,B,C]=P, det=A.x*(B.y-C.y)-A.y*(B.x-C.x)+(B.x*C.y-C.x*B.y); if(Math.abs(det)<1e-9) return null;
+  const solve=(u1,u2,u3)=>{ const a=(u1*(B.y-C.y)-A.y*(u2-u3)+(u2*C.y-u3*B.y))/det, b=(A.x*(u2-u3)-u1*(B.x-C.x)+(B.x*u3-C.x*u2))/det, c=(A.x*(B.y*u3-C.y*u2)-A.y*(B.x*u3-C.x*u2)+u1*(B.x*C.y-C.x*B.y))/det; return [a,b,c]; };
+  const [a,c,e]=solve(A.p.x,B.p.x,C.p.x), [b,d,f]=solve(A.p.y,B.p.y,C.p.y); return [a,b,c,d,e,f]; }
+const COV=new Map();
+async function chartsDraw(){ const pane=map.getPanes().overlayPane; const want=new Set(chartsMeta().filter(c=>c.vis!==false&&c.gcp&&c.gcp.filter(g=>g.lat!=null).length>=2).map(c=>c.id));
+  for(const [id,el] of COV) if(!want.has(id)){ el.remove(); COV.delete(id); }
+  for(const ch of chartsMeta()){ if(!want.has(ch.id)) continue; let el=COV.get(ch.id); if(!el){ el=document.createElement('img'); el.className='chart-ov'; el.decoding='async'; COV.set(ch.id,el); pane.appendChild(el); const src=await CDB.get(ch.id); if(src) el.src=src; }
+    const m=chartMatrix(ch); if(!m){ el.style.display='none'; continue; } el.style.display=''; el.style.opacity=ch.op??0.75; el.style.width=ch.w+'px'; el.style.height=ch.h+'px'; el.style.transform=`matrix(${m.map(v=>v.toFixed(6)).join(',')})`; } }
+map.on('zoomstart',()=>COV.forEach(el=>el.style.visibility='hidden')); map.on('zoomend viewreset',()=>{ chartsDraw(); COV.forEach(el=>el.style.visibility=''); });
+function chartGeo(txt,a){ txt=(txt||'').trim(); if(!txt) return null; const c=parseCoord(txt); if(c) return c; const r=fixRef(txt,a||{lat:41.3,lon:69.3,id:''}); if(r) return r;
+  const p=allPts().filter(x=>x.name.toUpperCase()===txt.toUpperCase()).sort((x,y)=>a?inverse(a.lat,a.lon,x.lat,x.lon).dist-inverse(a.lat,a.lon,y.lat,y.lon).dist:0)[0]; return p?{lat:p.lat,lon:p.lon}:null; }
+function vChartImg(){ const C=VIEW.ce; if(!C) return ''; const a=AD(C.ad);
+  return `<button class="back" data-act="ciBack">‹ ${t('Charts')}</button><div class="ph"><h2>${t('Chart image')}</h2></div>
+  <label class="f"><span>${t('Name')}</span><input class="txt" data-on="ci" data-k="name" value="${esc(C.name||'')}" placeholder="RWY 22 ILS"></label>
+  <p class="note">${t('Tap a point on the chart that has known coordinates (a fix with printed coordinates, a navaid, the runway threshold), then enter its position. Two points are enough; a third point improves accuracy.')}</p>
+  <div class="ci-wrap" id="ciWrap"><img id="ciImg" src="${C.src}" alt="">${C.gcp.map((g,i)=>`<i class="ci-pt${C.cur===i?' cur':''}" style="left:${g.x/C.w*100}%;top:${g.y/C.h*100}%">${i+1}</i>`).join('')}</div>
+  <div class="seg" style="margin:8px 0">${[0,1,2].map(i=>`<button aria-pressed="${C.cur===i}" data-act="ciCur" data-i="${i}">${t('Point {n}',{n:i+1})}${C.gcp[i]&&C.gcp[i].lat!=null?' ✓':''}</button>`).join('')}</div>
+  ${C.gcp[C.cur]?`<label class="f"><span>${t('Position of point {n} — coordinates, point name or R278 D18.9',{n:C.cur+1})}</span><input class="txt" data-on="ci" data-k="geo" value="${esc(C.gcp[C.cur].txt||'')}" placeholder="N55°35'36&quot; E037°52'46&quot;"></label><p class="note mono" id="ciGeo">${C.gcp[C.cur].lat!=null?fmtLL(C.gcp[C.cur].lat,C.gcp[C.cur].lon):'—'}</p>`:`<p class="note">${t('Tap the chart to place point {n}.',{n:C.cur+1})}</p>`}
+  <label class="f"><span>${t('Opacity')}</span><input type="range" min="0.2" max="1" step="0.05" value="${C.op??0.75}" data-on="ci" data-k="op"></label>
+  <div class="actions"><button class="btn primary big" data-act="ciSave">${t('Save and show on map')}</button>${C.id?`<button class="btn danger" data-act="ciDel">${t('Delete')}</button>`:''}</div>`; }
+function chartListHtml(a){ const L_=chartsMeta().filter(c=>c.ad===a.id); return `<h3>${t('Chart images')}</h3>${L_.length?`<ul class="list">${L_.map(c=>`<li class="crow"><button class="row" data-act="ciEdit" data-id="${c.id}"><span class="row-main"><b>${esc(c.name||t('Chart'))}</b><small>${t('{n} reference points',{n:c.gcp.filter(g=>g.lat!=null).length})}</small></span></button><input type="range" min="0.2" max="1" step="0.05" value="${c.op??0.75}" data-on="ciOp" data-id="${c.id}" style="width:90px"><button class="btn sm eye${c.vis!==false?' on':''}" data-act="ciVis" data-id="${c.id}">${c.vis!==false?'👁':'—'}</button></li>`).join('')}</ul>`:''}
+  <div class="actions"><button class="btn" data-act="ciAdd">+ ${t('Add chart image (photo, PNG, JPG, PDF)')}</button></div>`; }
+let ciFile=null;
+async function pdfToImg(file){ if(!window.pdfjsLib){ await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'; s.onload=res; s.onerror=()=>rej(new Error(t('PDF needs internet once; or send a photo/screenshot of the chart'))); document.head.appendChild(s); }); window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
+  const pdf=await window.pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise, pg=await pdf.getPage(1), vp=pg.getViewport({scale:2.2}), cv=document.createElement('canvas'); cv.width=vp.width; cv.height=vp.height; await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise; return cv.toDataURL('image/jpeg',0.86); }
+function fileToData(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error); r.readAsDataURL(f); }); }
+async function shrinkImg(src){ const im=new Image(); await new Promise(r=>{ im.onload=r; im.src=src; }); const mx=3000, k=Math.min(1,mx/Math.max(im.width,im.height)); if(k===1) return {src,w:im.width,h:im.height};
+  const cv=document.createElement('canvas'); cv.width=Math.round(im.width*k); cv.height=Math.round(im.height*k); cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height); return {src:cv.toDataURL('image/jpeg',0.86),w:cv.width,h:cv.height}; }
+document.addEventListener('click',e=>{ const im=e.target.closest&&e.target.closest('#ciImg'); if(!im||!VIEW.ce) return; const r=im.getBoundingClientRect(), C=VIEW.ce; const x=(e.clientX-r.left)/r.width*C.w, y=(e.clientY-r.top)/r.height*C.h;
+  const g=C.gcp[C.cur]||{lat:null,lon:null,txt:''}; g.x=x; g.y=y; C.gcp[C.cur]=g; renderPanel(); setTimeout(()=>{ const i=document.querySelector('[data-on="ci"][data-k="geo"]'); if(i) i.focus(); },50); });
+Object.assign(ON,{ ci:el=>{ const C=VIEW.ce; if(!C) return; const k=el.dataset.k;
+    if(k==='geo'){ const g=C.gcp[C.cur]; g.txt=el.value; const p=chartGeo(el.value,AD(C.ad)); g.lat=p?p.lat:null; g.lon=p?p.lon:null; const o=$('#ciGeo'); if(o) o.textContent=p?fmtLL(p.lat,p.lon):t('not recognised'); }
+    else if(k==='op') C.op=+el.value; else C[k]=el.value; },
+  ciOp:el=>{ const c=chartsMeta().find(x=>x.id===el.dataset.id); if(!c) return; c.op=+el.value; saveLib(); chartsDraw(); } });
+Object.assign(ACT,{
+  ciAdd:()=>{ const f=document.createElement('input'); f.type='file'; f.accept='image/*,application/pdf'; f.onchange=async()=>{ const file=f.files[0]; if(!file) return; toast(t('Loading…'));
+      try{ let src=/pdf/i.test(file.type)||/\.pdf$/i.test(file.name)?await pdfToImg(file):await fileToData(file); const s2=await shrinkImg(src); VIEW.ce={id:null,ad:VIEW.cad,name:file.name.replace(/\.[^.]+$/,''),src:s2.src,w:s2.w,h:s2.h,gcp:[],cur:0,op:0.75}; VIEW.sub='cimg'; renderPanel(); if(isPhone()) setSheet('full'); }catch(e){ toast(String(e.message||e)); } }; f.click(); },
+  ciEdit:async d=>{ const c=chartsMeta().find(x=>x.id===d.id); if(!c) return; const src=await CDB.get(c.id); VIEW.ce=Object.assign(JSON.parse(JSON.stringify(c)),{src,cur:0}); VIEW.sub='cimg'; renderPanel(); },
+  ciCur:d=>{ VIEW.ce.cur=+d.i; renderPanel(); },
+  ciBack:()=>{ VIEW.ce=null; VIEW.sub=null; renderPanel(); },
+  ciVis:d=>{ const c=chartsMeta().find(x=>x.id===d.id); if(!c) return; c.vis=c.vis===false; saveLib(); chartsDraw(); renderPanel(); },
+  ciSave:async()=>{ const C=VIEW.ce; const ok=C.gcp.filter(g=>g.lat!=null&&g.x!=null); if(ok.length<2){ toast(t('Place at least two points with known positions.')); return; }
+    const id=C.id||uid(), meta={id,ad:C.ad,name:C.name||'',w:C.w,h:C.h,gcp:C.gcp.map(g=>({x:g.x,y:g.y,lat:g.lat,lon:g.lon,txt:g.txt||''})),op:C.op??0.75,vis:true};
+    try{ await CDB.put(id,C.src); }catch(e){ toast(t('Could not store the image: {e}',{e:String(e.message||e)})); return; }
+    const L_=chartsMeta(), i=L_.findIndex(x=>x.id===id); if(i<0) L_.push(meta); else L_[i]=meta; saveLib(); const el=COV.get(id); if(el){ el.remove(); COV.delete(id); }
+    VIEW.ce=null; VIEW.sub=null; await chartsDraw(); const g=meta.gcp.filter(x=>x.lat!=null); map.fitBounds(g.map(x=>[x.lat,x.lon]),{padding:[60,60],maxZoom:12}); renderPanel(); if(isPhone()) setSheet('min'); toast(t('Chart placed on the map')); },
+  ciDel:()=>{ const C=VIEW.ce; if(!C||!C.id) return; const b=document.querySelector('[data-act="ciDel"]'); arm(b,'ciDel',async()=>{ LIB.charts=chartsMeta().filter(x=>x.id!==C.id); saveLib(); await CDB.del(C.id); const el=COV.get(C.id); if(el){ el.remove(); COV.delete(C.id); } VIEW.ce=null; VIEW.sub=null; renderPanel(); }); }
+});
+
+/* ---------- briefing: aircraft profile, weight & balance, ICAO flight plan, briefing document ---------- */
+let ACFT=(()=>{ try{ return JSON.parse(localStorage.getItem('fmn.acft.v1'))||[]; }catch(e){ return []; } })();
+const acftSave=()=>{ try{ localStorage.setItem('fmn.acft.v1',JSON.stringify(ACFT)); }catch(e){} };
+function acftNew(){ return {id:uid(),name:t('My aircraft'),type:'',reg:'',cs:'',wtc:'L',equip:'S/C',spd:'',fuel:'',endur:'',color:'',pob:'1',mtow:'',mlw:'',empty:{m:'',arm:''},fuelArm:'',st:[{n:t('Pilot (front)'),arm:'',m:''},{n:t('Pilot (rear)'),arm:'',m:''},{n:t('Baggage'),arm:'',m:''}],env:''}; }
+const BR={ac:null,fuel:'',wx:null,winds:null};
+function curAc(){ let a=ACFT.find(x=>x.id===CFG.acft); if(!a&&ACFT.length) a=ACFT[0]; return a||null; }
+function wbCalc(a,fuelKg){ if(!a) return null; const N=v=>{ const x=num(v); return x==null?0:x; }; let m=N(a.empty.m), mo=N(a.empty.m)*N(a.empty.arm); a.st.forEach(s=>{ m+=N(s.m); mo+=N(s.m)*N(s.arm); });
+  const f=N(fuelKg); m+=f; mo+=f*N(a.fuelArm); return {m,cg:m?mo/m:0,mo}; }
+function envPts(a){ return (a.env||'').split(/[\n;]+/).map(s=>s.trim().split(/[\s,\/]+/).map(Number)).filter(p=>p.length>=2&&p.every(isFinite)).map(([arm,m])=>({arm,m})); }
+function inPoly(P,x,y){ let c=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ if(((P[i].m>y)!==(P[j].m>y))&&(x<(P[j].arm-P[i].arm)*(y-P[i].m)/(P[j].m-P[i].m)+P[i].arm)) c=!c; } return c; }
+function routeFuel(r){ const L_=r?routeLegs(r):[]; return L_.reduce((s,l)=>s+(l.burn||0),0); }
+function fplText(a,r){ const pts=r?routePts(r):[], legs=r?routeLegs(r):[], dep=pts[0], dst=pts[pts.length-1], ic=p=>p&&(p.icao||(isAD(p)?p.name:''))||'ZZZZ';
+  const ll=p=>{ const la=Math.abs(p.lat), lo=Math.abs(p.lon); return String(Math.floor(la)).padStart(2,'0')+String(Math.round((la%1)*60)).padStart(2,'0')+(p.lat>=0?'N':'S')+String(Math.floor(lo)).padStart(3,'0')+String(Math.round((lo%1)*60)).padStart(2,'0')+(p.lon>=0?'E':'W'); };
+  const spdK=num(a&&a.spd)||(legs[0]&&legs[0].tas?legs[0].tas*3.6:null), alt=r&&r.alt?r.alt:null;
+  const lvl=alt==null?'VFR':(alt>=1000?'S'+String(Math.round(alt/10)).padStart(4,'0'):'M'+String(Math.round(alt/10)).padStart(4,'0'));
+  const rt=pts.slice(1,-1).map(p=>/^[A-Z]{2,5}\d?$/.test(p.name||'')&&!/^WP\d/.test(p.name)?p.name:ll(p)).join(' DCT ');
+  const ct=legs.length?legs[legs.length-1].cumT:null, eet=ct?String(Math.floor(ct/3600)).padStart(2,'0')+String(Math.round(ct%3600/60)).padStart(2,'0'):'0000';
+  const dof=new Date(); const D=`${String(dof.getUTCFullYear()).slice(2)}${String(dof.getUTCMonth()+1).padStart(2,'0')}${String(dof.getUTCDate()).padStart(2,'0')}`;
+  const tm=r&&r.dep?r.dep.replace(':',''):'0000';
+  return `(FPL-${(a&&(a.cs||a.reg)||'XXXXX').replace(/[^A-Z0-9]/gi,'').toUpperCase()}-${alt==null?'V':'I'}G\n-${(a&&a.type||'ZZZZ').toUpperCase()}/${(a&&a.wtc)||'L'}-${(a&&a.equip)||'S/C'}\n-${ic(dep)}${tm}\n-K${String(Math.round(spdK||0)).padStart(4,'0')}${lvl} ${rt?'DCT '+rt+' DCT':'DCT'}\n-${ic(dst)}${eet}\n-DOF/${D}${a&&a.reg?' REG/'+a.reg.toUpperCase():''}${a&&a.type?'':' TYP/'+((a&&a.name)||'')}\n-E/${(a&&a.endur?String(a.endur).replace(':','').padStart(4,'0'):'0000')} P/${(a&&a.pob)||'1'}${a&&a.color?' A/'+a.color.toUpperCase():''})`; }
+function vBrief(){ const r=Rt(FLY.routeId)||MS.routes[0], a=curAc(), pts=r?routePts(r):[], trip=routeFuel(r), f0=num(BR.fuel)??(r&&r.fuel0)??null;
+  const wb=a?wbCalc(a,f0):null, wbl=a&&f0!=null?wbCalc(a,Math.max(0,f0-trip)):null, env=a?envPts(a):[], mtow=a?num(a.mtow):null;
+  const okTo=wb&&(env.length<3||inPoly(env,wb.cg,wb.m))&&(mtow==null||wb.m<=mtow), okL=wbl&&(env.length<3||inPoly(env,wbl.cg,wbl.m));
+  const inp=(k,v,ph,cls='num')=>`<input class="${cls}" data-on="ac" data-k="${k}" ${cls==='num'?'inputmode="decimal"':''} value="${v==null?'':esc(String(v))}" placeholder="${ph||''}">`;
+  const acForm=a?`<details ${BR.open?'open':''} id="acDet"><summary class="btn">${t('Edit aircraft profile')}</summary><div class="form">
+    <div class="grid3"><label class="f"><span>${t('Profile name')}</span>${inp('name',a.name,'','txt')}</label><label class="f"><span>${t('Type (ICAO)')}</span>${inp('type',a.type,'L39','txt')}</label><label class="f"><span>${t('Registration')}</span>${inp('reg',a.reg,'','txt')}</label></div>
+    <div class="grid3"><label class="f"><span>${t('Callsign')}</span>${inp('cs',a.cs,'','txt')}</label><label class="f"><span>${t('Wake cat.')}</span>${inp('wtc',a.wtc,'L','txt')}</label><label class="f"><span>${t('Equipment')}</span>${inp('equip',a.equip,'S/C','txt')}</label></div>
+    <div class="grid3"><label class="f"><span>${t('Cruise TAS (km/h)')}</span>${inp('spd',a.spd,'')}</label><label class="f"><span>${t('Endurance (hh:mm)')}</span>${inp('endur',a.endur,'02:00','txt')}</label><label class="f"><span>POB</span>${inp('pob',a.pob,'2')}</label></div>
+    <div class="grid3"><label class="f"><span>${t('Colour')}</span>${inp('color',a.color,'','txt')}</label><label class="f"><span>${t('Max take-off mass (kg)')}</span>${inp('mtow',a.mtow,'')}</label><label class="f"><span>${t('Max landing mass (kg)')}</span>${inp('mlw',a.mlw,'')}</label></div>
+    <div class="grid3"><label class="f"><span>${t('Empty mass (kg)')}</span>${inp('empty.m',a.empty.m,'')}</label><label class="f"><span>${t('Empty arm (m)')}</span>${inp('empty.arm',a.empty.arm,'')}</label><label class="f"><span>${t('Fuel arm (m)')}</span>${inp('fuelArm',a.fuelArm,'')}</label></div>
+    ${a.st.map((s,i)=>`<div class="grid3"><label class="f"><span>${t('Station')}</span>${inp(`st.${i}.n`,s.n,'','txt')}</label><label class="f"><span>${t('Arm (m)')}</span>${inp(`st.${i}.arm`,s.arm,'')}</label><label class="f"><span>${t('Mass (kg)')}</span>${inp(`st.${i}.m`,s.m,'')}</label></div>`).join('')}
+    <div class="actions"><button class="btn sm" data-act="acSt" data-v="1">+ ${t('Station')}</button>${a.st.length>1?`<button class="btn sm" data-act="acSt" data-v="-1">− ${t('Station')}</button>`:''}</div>
+    <label class="f"><span>${t('CG envelope — points "arm mass" per line (from the flight manual)')}</span><textarea data-on="ac" data-k="env" rows="4" placeholder="2.10 2800&#10;2.10 4200&#10;2.35 4700&#10;2.45 4700&#10;2.45 2800">${esc(a.env||'')}</textarea></label>
+    <div class="actions"><button class="btn danger sm" data-act="acDel">${t('Delete profile')}</button></div></div></details>`:'';
+  return `<h3>${t('Aircraft')}</h3><div class="actions">${ACFT.length?`<select data-on="acSel">${ACFT.map(x=>`<option value="${x.id}"${a&&x.id===a.id?' selected':''}>${esc(x.name)}${x.reg?' · '+esc(x.reg):''}</option>`).join('')}</select>`:''}<button class="btn" data-act="acNew">+ ${t('New aircraft profile')}</button></div>${acForm}
+  ${a?`<h3>${t('Weight & balance')}</h3><div class="grid2"><label class="f"><span>${t('Fuel at take-off (kg)')}</span><input class="num" data-on="brF" inputmode="decimal" value="${f0??''}"></label><label class="f"><span>${t('Trip fuel (route)')}</span><input class="num" value="${Math.round(trip)}" disabled></label></div>
+   <dl class="kv"><dt>${t('Take-off mass / CG')}</dt><dd class="${okTo?'st-ok':'st-warn'}">${Math.round(wb.m)} kg · ${wb.cg.toFixed(3)} m ${okTo?'✓':'✗ '+t('outside limits')}</dd><dt>${t('Landing mass / CG')}</dt><dd class="${okL?'st-ok':'st-warn'}">${Math.round(wbl?wbl.m:0)} kg · ${(wbl?wbl.cg:0).toFixed(3)} m ${okL?'✓':'✗'}</dd></dl>
+   <canvas id="wbC" class="profile"></canvas>${env.length<3?`<p class="note">${t('Enter the CG envelope from the flight manual in the aircraft profile to check the limits.')}</p>`:''}`:`<p class="note">${t('Create an aircraft profile with masses and arms from the flight manual.')}</p>`}
+  <h3>${t('ICAO flight plan')}</h3><pre class="fpl" id="fplT">${esc(fplText(a,r))}</pre><div class="actions"><button class="btn" data-act="fplCopy">${t('Copy')}</button></div>
+  <p class="note">${t('Made from the active route and aircraft profile — check items 10, 15 and 18 before filing.')}</p>
+  <h3>${t('Briefing')}</h3><div class="actions"><button class="btn" data-act="brWinds">${t('Forecast winds for route legs')}</button><button class="btn primary" data-act="brDoc">${t('Create briefing document')}</button></div><div id="brOut"></div>
+  <p class="note">${t('NOTAMs are not available from a free open source — get them from the AIS / flight planning office.')}</p>`; }
+function drawWB(){ const c=$('#wbC'), a=curAc(); if(!c||!a) return; const env=envPts(a), r=Rt(FLY.routeId)||MS.routes[0], f0=num(BR.fuel)??(r&&r.fuel0)??0, wb=wbCalc(a,f0), wl=wbCalc(a,Math.max(0,f0-routeFuel(r)));
+  const dpr=window.devicePixelRatio||1, W=c.clientWidth, H=c.clientHeight||170; c.width=W*dpr; c.height=H*dpr; const g=c.getContext('2d'); g.scale(dpr,dpr); const cs=getComputedStyle(document.documentElement);
+  const P=env.concat([{arm:wb.cg,m:wb.m},{arm:wl.cg,m:wl.m}]).filter(p=>p.m>0); if(P.length<1) return; const a0=Math.min(...P.map(p=>p.arm)), a1=Math.max(...P.map(p=>p.arm)), m0=Math.min(...P.map(p=>p.m)), m1=Math.max(...P.map(p=>p.m));
+  const pa=(a1-a0)*.15||0.1, pm=(m1-m0)*.15||100, X=v=>34+(W-44)*(v-(a0-pa))/((a1+pa)-(a0-pa)), Y=v=>H-20-(H-30)*(v-(m0-pm))/((m1+pm)-(m0-pm));
+  if(env.length>=3){ g.beginPath(); env.forEach((p,i)=>i?g.lineTo(X(p.arm),Y(p.m)):g.moveTo(X(p.arm),Y(p.m))); g.closePath(); g.fillStyle='rgba(47,158,68,.18)'; g.fill(); g.strokeStyle='#2F9E44'; g.lineWidth=2; g.stroke(); }
+  g.strokeStyle=cs.getPropertyValue('--fg').trim()||'#000'; g.setLineDash([4,3]); g.beginPath(); g.moveTo(X(wb.cg),Y(wb.m)); g.lineTo(X(wl.cg),Y(wl.m)); g.stroke(); g.setLineDash([]);
+  [[wb,'TO','#E0201B'],[wl,'LDG','#1F6FD1']].forEach(([p,l,c2])=>{ g.fillStyle=c2; g.beginPath(); g.arc(X(p.cg),Y(p.m),5,0,2*Math.PI); g.fill(); g.font='700 11px '+getComputedStyle(document.body).fontFamily; g.fillText(l,X(p.cg)+7,Y(p.m)-6); });
+  g.fillStyle=cs.getPropertyValue('--muted').trim()||'#666'; g.font='600 10px '+getComputedStyle(document.body).fontFamily; g.fillText(t('CG (m)')+' →',W-60,H-4); g.fillText(t('kg'),4,12); }
+const _rp3=renderPanel; renderPanel=function(){ _rp3(); if(VIEW.tab==='wx'||VIEW.tab==='brief'||(VIEW.tab==='chart'&&VIEW.sub==='cimg')){ const el=$('#panel'), st=el.scrollTop; el.innerHTML=VIEW.tab==='wx'?vWx():VIEW.tab==='brief'?vBrief():vChartImg(); el.scrollTop=st; if(VIEW.tab==='brief') setTimeout(drawWB,30); }
+  else if(VIEW.tab==='chart'&&!VIEW.sub){ const a=chartAd(), el=$('#panel'); if(a&&!el.querySelector('#ciList')){ const d=document.createElement('div'); d.id='ciList'; d.innerHTML=chartListHtml(a); el.appendChild(d); } } };
+Object.assign(ON,{ acSel:el=>{ CFG.acft=el.value; saveCfg(); renderPanel(); }, brF:el=>{ BR.fuel=el.value; clearTimeout(BR.tm); BR.tm=setTimeout(()=>{ renderPanel(); },700); },
+  ac:el=>{ const a=curAc(); if(!a) return; setPath(a,el.dataset.k,el.value); acftSave(); BR.open=true; clearTimeout(BR.tm); BR.tm=setTimeout(()=>{ const f=$('#fplT'); if(f) f.textContent=fplText(a,Rt(FLY.routeId)||MS.routes[0]); drawWB(); },500); } });
+Object.assign(ACT,{
+  acNew:()=>{ const a=acftNew(); ACFT.push(a); CFG.acft=a.id; saveCfg(); acftSave(); BR.open=true; renderPanel(); },
+  acDel:()=>{ const a=curAc(); if(!a) return; const b=document.querySelector('[data-act="acDel"]'); arm(b,'acDel',()=>{ ACFT=ACFT.filter(x=>x.id!==a.id); acftSave(); renderPanel(); }); },
+  acSt:d=>{ const a=curAc(); if(!a) return; if(+d.v>0) a.st.push({n:'',arm:'',m:''}); else a.st.pop(); acftSave(); BR.open=true; renderPanel(); },
+  fplCopy:()=>{ const tx=$('#fplT').textContent; try{ navigator.clipboard.writeText(tx); toast(t('Copied')); }catch(e){ download('FPL.txt',tx,'text/plain'); } },
+  brWinds:async()=>{ const r=Rt(FLY.routeId)||MS.routes[0]; if(!r) return toast(t('Activate a route first.')); const legs=routeLegs(r); const o=$('#brOut'); if(o) o.innerHTML=`<p class="note">${t('Loading…')}</p>`;
+    const lv=a=>{ const L_=[[1000,'1000hPa',110],[925,'925hPa',760],[850,'850hPa',1460],[700,'700hPa',3010],[600,'600hPa',4200],[500,'500hPa',5570],[400,'400hPa',7190],[300,'300hPa',9160]]; let b=L_[0]; L_.forEach(x=>{ if(Math.abs(x[2]-(a||1000))<Math.abs(b[2]-(a||1000))) b=x; }); return b[1]; };
+    try{ const mids=legs.map(l=>interp(l.a.lat,l.a.lon,l.b.lat,l.b.lon,.5)), lvs=legs.map(l=>lv(l.alt)), uniq=[...new Set(lvs)];
+      const j=await httpJson(`https://api.open-meteo.com/v1/forecast?latitude=${mids.map(m=>m.lat.toFixed(2)).join(',')}&longitude=${mids.map(m=>m.lon.toFixed(2)).join(',')}&current=${uniq.map(v=>`wind_speed_${v},wind_direction_${v},temperature_${v}`).join(',')}&wind_speed_unit=ms`);
+      const arr=Array.isArray(j)?j:[j]; BR.winds=legs.map((l,i)=>{ const c=arr[i]&&arr[i].current||{}; return {i,lv:lvs[i],wd:c[`wind_direction_${lvs[i]}`],ws:c[`wind_speed_${lvs[i]}`],tt:c[`temperature_${lvs[i]}`]}; });
+      if(o) o.innerHTML=`<div class="tblw"><table class="wxt"><tr><th>#</th><th>${t('Leg')}</th><th>${t('Level')}</th><th>${t('Wind')}</th><th>T</th></tr>${BR.winds.map(w=>`<tr><td>${w.i+1}</td><td>${esc(legs[w.i].a.name)}–${esc(legs[w.i].b.name)}</td><td>${w.lv.replace('hPa',' hPa')}</td><td>${w.wd!=null?String(Math.round(w.wd)).padStart(3,'0')+'/'+Math.round(windOut(w.ws))+' '+ul(CFG.wind||'mps'):'—'}</td><td>${w.tt!=null?Math.round(w.tt)+'°':'—'}</td></tr>`).join('')}</table></div><div class="actions"><button class="btn" data-act="brApplyW">${t('Use these winds in the route')}</button></div>`; }catch(e){ if(o) o.innerHTML=`<p class="note st-warn">${esc(String(e.message||e))}</p>`; } },
+  brApplyW:()=>{ const r=Rt(FLY.routeId)||MS.routes[0]; if(!r||!BR.winds) return; r.lo=r.lo||[]; BR.winds.forEach(w=>{ if(w.wd==null) return; r.lo[w.i]=Object.assign({},r.lo[w.i]||{},{wd:Math.round(w.wd),ws:+w.ws.toFixed(1)}); }); save(); renderMap(); toast(t('Forecast winds applied to the route legs')); },
+  brDoc:async()=>{ const r=Rt(FLY.routeId)||MS.routes[0], a=curAc(); toast(t('Preparing briefing…')); if(!WX.st.length) await wxFetch(true).catch(()=>{});
+    const legs=r?routeLegs(r):[], pts=r?routePts(r):[], f0=num(BR.fuel)??(r&&r.fuel0)??null, trip=routeFuel(r), wb=a?wbCalc(a,f0):null, wl=a&&f0!=null?wbCalc(a,Math.max(0,f0-trip)):null;
+    const nearSt=p=>WX.st.filter(o=>o.lat!=null).map(o=>({o,d:inverse(p.lat,p.lon,o.lat,o.lon).dist})).sort((x,y)=>x.d-y.d)[0];
+    const wxs=[]; [pts[0],pts[pts.length-1]].filter(Boolean).forEach(p=>{ const n=nearSt(p); if(n&&!wxs.some(x=>x.o.icaoId===n.o.icaoId)) wxs.push(n); });
+    const s=pts[0]?sunTimes(new Date(),pts[0].lat,pts[0].lon):null, E=v=>String(v==null?'':v).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const html=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${E(t('Briefing'))} ${E(MS.name)}</title><style>body{font:14px/1.35 Arial,sans-serif;margin:16px;color:#111}h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;border-bottom:2px solid #0B1F3F;margin:18px 0 6px;padding-bottom:2px;color:#0B1F3F}table{border-collapse:collapse;width:100%;font-size:12.5px}td,th{border:1px solid #b7c3d1;padding:3px 5px;text-align:left}th{background:#DEEBF7}.m{font-family:Consolas,monospace;white-space:pre-wrap;font-size:12.5px;background:#f3f6fb;padding:6px;border:1px solid #d6dee8}small{color:#56677D}</style></head><body>
+      <h1>${E(t('Pre-flight briefing'))} — ${E(MS.name)}</h1><small>${E(new Date().toISOString().slice(0,16).replace('T',' '))}Z · ${E(a?a.name+' '+(a.type||'')+' '+(a.reg||''):'')}</small>
+      <h2>${E(t('Route'))}${r?' — '+E(r.name):''}</h2>${legs.length?`<table><tr><th>#</th><th>${E(t('From'))}</th><th>${E(t('To'))}</th><th>${E(abN('MC'))}</th><th>${E(abN('MH'))}</th><th>${E(t('Dist'))}</th><th>${E(t('Alt'))}</th><th>${E(t('Wind'))}</th><th>GS</th><th>ETE</th><th>ETA</th><th>${E(t('Fuel'))}</th></tr>${legs.map((l,i)=>`<tr><td>${i+1}</td><td>${E(l.a.name)}</td><td>${E(l.b.name)}</td><td>${fmtBrg(legC(l))}</td><td>${l.imp?'—':fmtBrg(legH(l))}</td><td>${fmtDist(l.dist)}</td><td>${l.alt!=null?fmtAlt(l.alt):'—'}</td><td>${l.wd!=null&&l.ws?String(Math.round(l.wd)).padStart(3,'0')+'/'+Math.round(windOut(l.ws)):'—'}</td><td>${l.gs?Math.round(spdOut(l.gs)):'—'}</td><td>${l.ete?fmtEte(l.ete):'—'}</td><td>${l.eta?fmtClock(l.eta):'—'}</td><td>${l.fuelRem!=null?Math.round(fuelOut(l.fuelRem)):'—'}</td></tr>`).join('')}<tr><th colspan="5">${E(t('Total'))}</th><th>${fmtDist(legs[legs.length-1].cum)}</th><th colspan="3"></th><th>${legs[legs.length-1].cumT?fmtEte(legs[legs.length-1].cumT):'—'}</th><th></th><th>${trip?Math.round(fuelOut(trip)):'—'}</th></tr></table>`:`<p>${E(t('No active route.'))}</p>`}
+      <h2>${E(t('Weather'))}</h2>${wxs.length?wxs.map(({o,d})=>`<p><b>${E(o.icaoId)}</b> ${E(o.name||'')} <small>(${fmtDist(d)} ${E(t('from'))} ${E(pts[0]&&inverse(pts[0].lat,pts[0].lon,o.lat,o.lon).dist===d?pts[0].name:pts[pts.length-1].name)})</small></p><div class="m">${E(o.rawOb||'')}${o.rawTaf?'\n'+E(o.rawTaf):''}</div>`).join(''):`<p>${E(t('No reports loaded (internet needed).'))}</p>`}
+      ${BR.winds?`<p><b>${E(t('Forecast winds'))}</b></p><table><tr><th>#</th><th>${E(t('Level'))}</th><th>${E(t('Wind'))}</th><th>T</th></tr>${BR.winds.map(w=>`<tr><td>${w.i+1}</td><td>${E(w.lv)}</td><td>${w.wd!=null?String(Math.round(w.wd)).padStart(3,'0')+'/'+Math.round(windOut(w.ws)):''}</td><td>${w.tt!=null?Math.round(w.tt)+'°':''}</td></tr>`).join('')}</table>`:''}
+      <h2>NOTAM</h2><p>${E(t('Not included — obtain current NOTAMs from the AIS / flight planning office.'))}</p>
+      ${a&&wb?`<h2>${E(t('Weight & balance'))}</h2><table><tr><th></th><th>${E(t('Mass'))}</th><th>CG</th></tr><tr><td>${E(t('Take-off'))}</td><td>${Math.round(wb.m)} kg</td><td>${wb.cg.toFixed(3)} m</td></tr>${wl?`<tr><td>${E(t('Landing'))}</td><td>${Math.round(wl.m)} kg</td><td>${wl.cg.toFixed(3)} m</td></tr>`:''}</table>`:''}
+      ${s?`<h2>${E(t('Sun'))}</h2><p>${E(t('Sunrise'))} ${fmtClock(s.rise)} · ${E(t('Sunset'))} ${fmtClock(s.set)}</p>`:''}
+      <h2>${E(t('ICAO flight plan'))}</h2><div class="m">${E(fplText(a,r))}</div></body></html>`;
+    download(`briefing-${(MS.name||'mission').replace(/[^\w-]+/g,'_')}.html`,html,'text/html'); }
+});
+/* home tiles for the new screens */
+Object.assign(IC,{wx:'<path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.6 1.6A3.3 3.3 0 0 0 7 18z"/><path d="M9 21l1-2M13 21l1-2"/>',sv:'<path d="M3 13h18"/><path d="M3 13l5-4 4 3 4-5 5 6"/><circle cx="12" cy="13" r="2.2"/><path d="M6 13h3M15 13h3"/>',brief:'<rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 4V3h6v1M8 9h8M8 13h8M8 17h5"/>'});
+Object.assign(TAB_T,{wx:'Weather',brief:'Briefing'});
+Object.assign(RU,{'Synthetic view':'Синтетическое изображение','Start GPS or the simulator in the Flight tab':'Включите GPS или имитатор на вкладке «Полёт»','loading terrain…':'загрузка рельефа…','PULL UP — TERRAIN':'ВВЕРХ — ЗЕМЛЯ','CAUTION TERRAIN':'ВНИМАНИЕ, ЗЕМЛЯ','in':'через','Terrain profile ahead (±1 km corridor)':'Профиль рельефа впереди (коридор ±1 км)','AGL':'Hист',
+ 'Weather':'Погода','Stations METAR/TAF':'Станции METAR/TAF','Rain radar':'Радар осадков','Satellite (IR)':'Спутник (ИК)','Clouds (model)':'Облачность (модель)','Wind (model)':'Ветер (модель)','Surface':'У земли','Refresh':'Обновить','Forecast for map centre':'Прогноз для центра карты',
+ 'No reporting stations in this area.':'В этом районе нет станций.','Tap Refresh to load reports (internet needed).':'Нажмите «Обновить», чтобы загрузить сводки (нужен интернет).','Wind':'Ветер','Visibility':'Видимость','Vis':'Вид.','Clouds':'Облачность','Forecast':'Прогноз','Time':'Время','Loading weather…':'Загрузка погоды…','Loading…':'Загрузка…',
+ 'Reports: aviationweather.gov (NOAA). Model data: Open-Meteo. Radar and satellite: RainViewer. Military aerodromes usually do not publish METAR — use the duty forecaster for official weather.':'Сводки: aviationweather.gov (NOAA). Модельные данные: Open-Meteo. Радар и спутник: RainViewer. Военные аэродромы обычно не публикуют METAR — официальную погоду получайте у дежурного синоптика.',
+ 'Satellite images are not available now.':'Спутниковые снимки сейчас недоступны.','Radar images are not available now.':'Радарные данные сейчас недоступны.',
+ 'Chart images':'Изображения схем','Chart image':'Изображение схемы','Chart':'Схема','{n} reference points':'Опорных точек: {n}','Add chart image (photo, PNG, JPG, PDF)':'Добавить схему (фото, PNG, JPG, PDF)','Point {n}':'Точка {n}',
+ 'Tap a point on the chart that has known coordinates (a fix with printed coordinates, a navaid, the runway threshold), then enter its position. Two points are enough; a third point improves accuracy.':'Коснитесь на схеме точки с известными координатами (точка с подписанными координатами, радиосредство, порог ВПП) и введите её положение. Достаточно двух точек; третья повышает точность.',
+ 'Position of point {n} — coordinates, point name or R278 D18.9':'Положение точки {n} — координаты, название или R278 D18.9','Tap the chart to place point {n}.':'Коснитесь схемы, чтобы поставить точку {n}.','Opacity':'Прозрачность','Save and show on map':'Сохранить и показать на карте','not recognised':'не распознано',
+ 'Place at least two points with known positions.':'Поставьте минимум две точки с известными координатами.','Chart placed on the map':'Схема наложена на карту','Could not store the image: {e}':'Не удалось сохранить изображение: {e}','PDF needs internet once; or send a photo/screenshot of the chart':'Для PDF нужен интернет; или загрузите фото/снимок экрана схемы',
+ 'Briefing':'Брифинг','Aircraft':'Воздушное судно','New aircraft profile':'Новый профиль ВС','Edit aircraft profile':'Редактировать профиль ВС','Profile name':'Название профиля','Type (ICAO)':'Тип (ИКАО)','Registration':'Рег. номер','Callsign':'Позывной','Wake cat.':'Кат. турбулентности','Equipment':'Оборудование',
+ 'Cruise TAS (km/h)':'Крейсерская V ист (км/ч)','Endurance (hh:mm)':'Запас по времени (чч:мм)','Colour':'Окраска','Max take-off mass (kg)':'Макс. взлётная масса (кг)','Max landing mass (kg)':'Макс. посадочная масса (кг)','Empty mass (kg)':'Масса пустого (кг)','Empty arm (m)':'Плечо пустого (м)','Fuel arm (m)':'Плечо топлива (м)',
+ 'Station':'Место','Arm (m)':'Плечо (м)','Mass (kg)':'Масса (кг)','CG envelope — points "arm mass" per line (from the flight manual)':'Диапазон центровок — точки «плечо масса» по строкам (из РЛЭ)','Delete profile':'Удалить профиль','My aircraft':'Моё ВС','Pilot (front)':'Лётчик (передняя каб.)','Pilot (rear)':'Лётчик (задняя каб.)','Baggage':'Багаж',
+ 'Weight & balance':'Масса и центровка','Fuel at take-off (kg)':'Топливо на взлёте (кг)','Trip fuel (route)':'Расход на маршрут','Take-off mass / CG':'Взлётная масса / центровка','Landing mass / CG':'Посадочная масса / центровка','outside limits':'вне диапазона',
+ 'Enter the CG envelope from the flight manual in the aircraft profile to check the limits.':'Введите диапазон центровок из РЛЭ в профиле ВС, чтобы проверять ограничения.','Create an aircraft profile with masses and arms from the flight manual.':'Создайте профиль ВС с массами и плечами из РЛЭ.',
+ 'ICAO flight plan':'План полёта ИКАО','Copy':'Копировать','Copied':'Скопировано','Made from the active route and aircraft profile — check items 10, 15 and 18 before filing.':'Составлен по активному маршруту и профилю ВС — перед подачей проверьте пункты 10, 15 и 18.',
+ 'Forecast winds for route legs':'Прогноз ветра по участкам маршрута','Create briefing document':'Создать документ брифинга','NOTAMs are not available from a free open source — get them from the AIS / flight planning office.':'NOTAM недоступны из бесплатных открытых источников — получайте их в службе САИ / ПДС.',
+ 'Activate a route first.':'Сначала активируйте маршрут.','Leg':'Участок','Level':'Уровень','Use these winds in the route':'Применить ветер к маршруту','Forecast winds applied to the route legs':'Прогнозный ветер применён к участкам маршрута','Preparing briefing…':'Подготовка брифинга…',
+ 'Pre-flight briefing':'Предполётный брифинг','Route':'Маршрут','From':'От','To':'До','Dist':'S','Alt':'H','Fuel':'Топливо','Total':'Итого','No active route.':'Нет активного маршрута.','No reports loaded (internet needed).':'Сводки не загружены (нужен интернет).','from':'от','Forecast winds':'Прогноз ветра',
+ 'Not included — obtain current NOTAMs from the AIS / flight planning office.':'Не включены — получите действующие NOTAM в службе САИ / ПДС.','Mass':'Масса','Take-off':'Взлёт','Landing':'Посадка','CG (m)':'Центровка (м)','kg':'кг',
+ 'Terrain warning (TAWS)':'Предупреждение о земле (TAWS)','Voice warnings':'Голосовые предупреждения'});
+
+setTimeout(()=>{ try{ chartsDraw(); const L_=CFG.wxl||{}; if(L_.st) wxFetch(true); if(L_.radar||L_.sat) wxRadar(); if(L_.cl||L_.wind) wxGrid(); }catch(e){ console.warn(e); } },1500);
 /* ================= boot ================= */
 (()=>{ let seed=null; try{ const tx=$('#fmn-seed').textContent.trim(); if(tx) seed=JSON.parse(tx); }catch(e){}
   const fresh=!lsGet('fmn.mission.v1');
