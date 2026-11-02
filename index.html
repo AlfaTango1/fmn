@@ -804,7 +804,7 @@ body{background:var(--bg)}
 #layerMenu label.lchip:has(input:checked) .ico{color:#fff}
 .leaflet-popup-content-wrapper{border:0!important;border-radius:14px!important}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface)!important}
-#toast{border:0!important;border-radius:999px!important;background:var(--surface-2)!important;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+#toast{border:0!important;border-radius:16px!important;background:var(--surface-2)!important;box-shadow:0 6px 20px rgba(0,0,0,.4);box-sizing:border-box;width:max-content;max-width:min(calc(100vw - 32px),460px)!important;white-space:normal!important;overflow-wrap:anywhere;text-align:center;font:600 15px/1.35 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;padding:12px 18px!important}
 /* home: Garmin Connect "at a glance" cards */
 .hgrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
 .ht{background:var(--surface)!important;border:0!important;border-radius:16px!important;min-height:96px!important;aspect-ratio:auto!important;align-items:flex-start!important;justify-content:space-between!important;padding:12px!important;--ic:var(--accent)}
@@ -4425,7 +4425,7 @@ function vGlance(){ const r=Rt(FLY.routeId)||MS.routes[0], legs=r?routeLegs(r):[
       ${glRing(acc!=null?Math.min(1,10/Math.max(acc,1)):0,acc==null?'#8e8e93':acc<=15?'#30d158':acc<=50?'#ff9f0a':'#ff453a',acc!=null?'±'+Math.round(acc):'—','m','GPS'+(used?' · '+used+' '+t('sat.'):''))}
       ${glRing(p&&FLY.gs!=null?Math.min(1,FLY.gs/150):0,'#ff375f',p&&FLY.gs!=null?Math.round(spdOut(FLY.gs)):'—',spdU(),t('Ground speed'))}</div>
     <div class="gl-tiles">${tiles.map(([k,v])=>`<div><small>${k}</small><b>${v}</b></div>`).join('')}</div></div>`; }
-{ const _vh7=vHome; vHome=function(){ return `<div id="glance">${vGlance()}</div>`+_vh7(); }; }
+/* at-a-glance card removed from the menu at the user's request */
 setInterval(()=>{ if(VIEW.tab==='home'){ const g=$('#glance'); if(g) g.innerHTML=vGlance(); } },2000);
 Object.assign(RU,{'At a glance':'Обзор','In flight':'В полёте','Next':'Следующая','Distance':'Расстояние','To go':'Осталось','sat.':'спутн.','Ground speed':'Путевая скорость','No route':'Нет маршрута'});
 
