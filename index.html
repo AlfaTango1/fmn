@@ -2981,7 +2981,7 @@ function renderSoft(){ const el=$('#gsoft'); if(!el) return; const open=$('#shee
 function vHome(){
   const tile=(act,ic,lbl,cls,extra='')=>`<button class="ht ${cls}" data-act="${act}" ${extra}>${svgI(ic,1.7)}<span>${t(lbl)}</span></button>`;
   return `<div class="hgrid">${tile('homeGo','fpl','Flight plan','mag','data-k="routes"')}${tile('homeGo','wpt','Waypoints','cy','data-k="points"')}${tile('homeGo','zone','Zones','amb','data-k="zones"')}${tile('tab','ad','Aerodromes','cy','data-tab="ad"')}
-  ${tile('nrstOpen','nrst','Nearest','grn')}${tile('dtoOpen','fpl','Direct-To','mag')}${tile('tab','fly','Flight','grn','data-tab="fly"')}${tile('tab','tools','Tools','cy','data-tab="tools"')}${tile('tab','chart','Charts','mag','data-tab="chart"')}${tile('tab','wx','Weather','cy','data-tab="wx"')}${tile('svOpen','sv','Synthetic view','grn')}${tile('tab','brief','Briefing','amb','data-tab="brief"')}
+  ${tile('nrstOpen','nrst','Nearest','grn')}${tile('dtoOpen','fpl','Direct-To','mag')}${tile('tab','fly','Flight','grn','data-tab="fly"')}${tile('tab','tools','Tools','cy','data-tab="tools"')}${tile('tab','chart','Charts','mag','data-tab="chart"')}${tile('tab','wx','Weather','cy','data-tab="wx"')}${tile('tab','brief','Briefing','amb','data-tab="brief"')}
   ${tile('homeMeasure','meas','Measure','cy')}${tile('homeLayers','layers','Map layers','grn')}${tile('tab','xfer','Transfer','cy','data-tab="more"')}${tile('tab','setup','Setup','','data-tab="more"')}</div>
   <p class="note" style="margin-top:12px">${t('Tap a data field at the top of the screen to change what it shows.')}</p>`;
 }
@@ -3642,17 +3642,17 @@ function wxNear(){ const c=FLY.pos||(q=>({lat:q.lat,lon:q.lng}))(map.getCenter()
 function vWx(){ const L_=CFG.wxl||{}, ch=(k,l)=>`<button class="chip-b" aria-pressed="${!!L_[k]}" data-act="wxL" data-k="${k}">${t(l)}</button>`;
   const rows=wxNear().map(({o,d})=>{ const x=wxDecode(o); return `<li class="crow wxrow"><div class="row" style="cursor:default;display:block"><div style="display:flex;justify-content:space-between;align-items:center"><b>${esc(o.icaoId)} <span class="badge" style="background:${fltCol(o.fltCat)};color:#fff">${esc(o.fltCat||'—')}</span> <small>${esc(o.name||'')}</small></b><small>${fmtDist(d)}</small></div>
     <small>${t('Wind')} ${x.w} · ${t('Vis')} ${x.vis} · ${x.cl} · QNH ${x.q} · ${x.tmp}</small><p class="mono wxraw">${esc(o.rawOb||'')}</p>${o.rawTaf?`<p class="mono wxraw taf">${esc(o.rawTaf)}</p>`:''}</div></li>`; }).join('');
-  return `<div class="chips">${ch('st','Stations METAR/TAF')}${ch('radar','Rain radar')}${ch('sat','Satellite (IR)')}${ch('cl','Clouds (model)')}${ch('wind','Wind (model)')}</div>
+  return `<div class="chips">${ch('st','Stations METAR/TAF')}${ch('cl','Clouds (model)')}${ch('wind','Wind (model)')}</div>
   ${L_.wind?`<div class="seg" style="margin:4px 0 8px">${['sfc','850','700','500','300'].map(k=>`<button aria-pressed="${(L_.lev||'sfc')===k}" data-act="wxLev" data-k="${k}">${k==='sfc'?t('Surface'):k+' hPa'}</button>`).join('')}</div>`:''}
-  <div class="actions"><button class="btn" data-act="wxRef">${t('Refresh')}</button><button class="btn" data-act="wxPt">${t('Forecast for map centre')}</button></div>
+  <div class="actions"><button class="btn" data-act="wxRef">${t('Refresh')}</button></div>
   ${WX.err?`<p class="note st-warn">${esc(WX.err)}</p>`:''}<div id="wxPt"></div>
   <h3>METAR / TAF</h3>${rows?`<ul class="list">${rows}</ul>`:`<p class="note">${WX.t?t('No reporting stations in this area.'):t('Tap Refresh to load reports (internet needed).')}</p>`}
-  <p class="note">${t('Reports: aviationweather.gov (NOAA). Model data: Open-Meteo. Radar and satellite: RainViewer. Military aerodromes usually do not publish METAR — use the duty forecaster for official weather.')}</p>`; }
+  <p class="note">${t('Reports: aviationweather.gov (NOAA). Model data: Open-Meteo. Military aerodromes usually do not publish METAR — use the duty forecaster for official weather.')}</p>`; }
 Object.assign(ACT,{
   wxL:d=>{ CFG.wxl=Object.assign({},CFG.wxl||{}); CFG.wxl[d.k]=!CFG.wxl[d.k]; if(d.k==='radar'&&CFG.wxl.radar) CFG.wxl.sat=false; if(d.k==='sat'&&CFG.wxl.sat) CFG.wxl.radar=false; CFG.wxl.grid=CFG.wxl.cl||CFG.wxl.wind; saveCfg();
     if(d.k==='st'&&CFG.wxl.st) wxFetch(); if(d.k==='radar'||d.k==='sat') wxRadar(); if(d.k==='cl'||d.k==='wind') wxGrid(); wxDraw(); renderPanel(); },
   wxLev:d=>{ CFG.wxl=Object.assign({},CFG.wxl||{},{lev:d.k}); saveCfg(); wxGrid(); renderPanel(); },
-  wxRef:()=>{ WX.t=0; wxFetch(true); wxGrid(); wxRadar(); toast(t('Loading weather…')); },
+  wxRef:()=>{ WX.t=0; wxFetch(true); wxGrid(); toast(t('Loading weather…')); },
   wxPt:async()=>{ const c=map.getCenter(), el=$('#wxPt'); if(el) el.innerHTML=`<p class="note">${t('Loading…')}</p>`;
     try{ const j=await httpJson(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat.toFixed(3)}&longitude=${c.lng.toFixed(3)}&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,precipitation,visibility&forecast_days=3&timezone=auto`);
       const h=j.hourly, rows=[]; for(let i=0;i<h.time.length;i+=3) rows.push(`<tr><td>${h.time[i].slice(5,13).replace('T',' ')}</td><td>${Math.round(h.temperature_2m[i])}°</td><td>${String(Math.round(h.wind_direction_10m[i])).padStart(3,'0')}/${Math.round(h.wind_speed_10m[i])}${h.wind_gusts_10m[i]>h.wind_speed_10m[i]+15?'G'+Math.round(h.wind_gusts_10m[i]):''}</td><td>${h.cloud_cover[i]}%</td><td>${h.precipitation[i]}</td><td>${h.visibility?Math.round(h.visibility[i]/1000):'—'}</td></tr>`);
@@ -3805,7 +3805,7 @@ Object.assign(TAB_T,{wx:'Weather',brief:'Briefing'});
 Object.assign(RU,{'Synthetic view':'Синтетическое изображение','Start GPS or the simulator in the Flight tab':'Включите GPS или имитатор на вкладке «Полёт»','loading terrain…':'загрузка рельефа…','PULL UP — TERRAIN':'ВВЕРХ — ЗЕМЛЯ','CAUTION TERRAIN':'ВНИМАНИЕ, ЗЕМЛЯ','in':'через','Terrain profile ahead (±1 km corridor)':'Профиль рельефа впереди (коридор ±1 км)','AGL':'Hист',
  'Weather':'Погода','Stations METAR/TAF':'Станции METAR/TAF','Rain radar':'Радар осадков','Satellite (IR)':'Спутник (ИК)','Clouds (model)':'Облачность (модель)','Wind (model)':'Ветер (модель)','Surface':'У земли','Refresh':'Обновить','Forecast for map centre':'Прогноз для центра карты',
  'No reporting stations in this area.':'В этом районе нет станций.','Tap Refresh to load reports (internet needed).':'Нажмите «Обновить», чтобы загрузить сводки (нужен интернет).','Wind':'Ветер','Visibility':'Видимость','Vis':'Вид.','Clouds':'Облачность','Forecast':'Прогноз','Time':'Время','Loading weather…':'Загрузка погоды…','Loading…':'Загрузка…',
- 'Reports: aviationweather.gov (NOAA). Model data: Open-Meteo. Radar and satellite: RainViewer. Military aerodromes usually do not publish METAR — use the duty forecaster for official weather.':'Сводки: aviationweather.gov (NOAA). Модельные данные: Open-Meteo. Радар и спутник: RainViewer. Военные аэродромы обычно не публикуют METAR — официальную погоду получайте у дежурного синоптика.',
+ 'Reports: aviationweather.gov (NOAA). Model data: Open-Meteo. Military aerodromes usually do not publish METAR — use the duty forecaster for official weather.':'Сводки: aviationweather.gov (NOAA). Модельные данные: Open-Meteo. Военные аэродромы обычно не публикуют METAR — официальную погоду получайте у дежурного синоптика.',
  'Satellite images are not available now.':'Спутниковые снимки сейчас недоступны.','Radar images are not available now.':'Радарные данные сейчас недоступны.',
  'Chart images':'Изображения схем','Chart image':'Изображение схемы','Chart':'Схема','{n} reference points':'Опорных точек: {n}','Add chart image (photo, PNG, JPG, PDF)':'Добавить схему (фото, PNG, JPG, PDF)','Point {n}':'Точка {n}',
  'Tap a point on the chart that has known coordinates (a fix with printed coordinates, a navaid, the runway threshold), then enter its position. Two points are enough; a third point improves accuracy.':'Коснитесь на схеме точки с известными координатами (точка с подписанными координатами, радиосредство, порог ВПП) и введите её положение. Достаточно двух точек; третья повышает точность.',
@@ -3823,7 +3823,7 @@ Object.assign(RU,{'Synthetic view':'Синтетическое изображе�
  'Not included — obtain current NOTAMs from the AIS / flight planning office.':'Не включены — получите действующие NOTAM в службе САИ / ПДС.','Mass':'Масса','Take-off':'Взлёт','Landing':'Посадка','CG (m)':'Центровка (м)','kg':'кг',
  'Terrain warning (TAWS)':'Предупреждение о земле (TAWS)','Voice warnings':'Голосовые предупреждения'});
 
-setTimeout(()=>{ try{ chartsDraw(); const L_=CFG.wxl||{}; if(L_.st) wxFetch(true); if(L_.radar||L_.sat) wxRadar(); if(L_.cl||L_.wind) wxGrid(); }catch(e){ console.warn(e); } },1500);
+setTimeout(()=>{ try{ if(CFG.wxl){ delete CFG.wxl.radar; delete CFG.wxl.sat; } chartsDraw(); const L_=CFG.wxl||{}; if(L_.st) wxFetch(true); if(L_.cl||L_.wind) wxGrid(); }catch(e){ console.warn(e); } },1500);
 /* ========================================================================== */
 /*  AERONAUTICAL CHART (ICAO): airspace, restricted / prohibited / danger areas, FIR / CTA / TMA / CTR,       */
 /*  navaids, VFR reporting points, obstacles, airports (openAIP data), MEF numbers and lat/lon grid          */
@@ -3929,14 +3929,18 @@ function aeroPop(ll){ const h=aspHtml(ll.lat,ll.lng); if(!h) return; L.popup({ma
 const _infoAt=infoAt; infoAt=async function(ll){ const pr=_infoAt(ll); setTimeout(()=>{ const el=document.querySelector('.leaflet-popup .pop'); if(el&&AERO.asp.length){ const h=aspHtml(ll.lat,nLon(ll.lng)); if(h) el.insertAdjacentHTML('beforeend',h); } },0); return pr; };
 function ptLbl(html,cls){ return L.divIcon({className:'aero-pl '+cls,html,iconSize:null,iconAnchor:[-10,8]}); }
 function dupNear(lat,lon,name,km){ const r=(km||3)*1000; return allPts().some(p=>(!name||String(p.name||'').toUpperCase()===String(name).toUpperCase()||p.icao&&p.icao===name)&&Math.abs(p.lat-lat)<.05&&inverse(p.lat,p.lon,lat,lon).dist<r); }
+function aspLabelPt(a){ if(a._lp) return a._lp; let best=null, bd=-1; const R=a.rings.reduce((x,y)=>bbOf(y)[2]-bbOf(y)[0]>bbOf(x)[2]-bbOf(x)[0]?y:x), b=bbOf(R), k=Math.cos((b[0]+b[2])/2*Math.PI/180), N=18;
+  const ed=(la,lo)=>{ let m=Infinity; for(let i=0,j=R.length-1;i<R.length;j=i++){ const ax=R[j][1]*k, ay=R[j][0], bx=R[i][1]*k, by=R[i][0], px=lo*k, py=la, dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy; let t_=l2?((px-ax)*dx+(py-ay)*dy)/l2:0; t_=Math.max(0,Math.min(1,t_)); const d=Math.hypot(px-ax-t_*dx,py-ay-t_*dy); if(d<m) m=d; } return m; };
+  const inner=AERO.asp.filter(o=>o!==a&&o.bb[0]>=b[0]&&o.bb[2]<=b[2]&&o.bb[1]>=b[1]&&o.bb[3]<=b[3]&&(o.bb[2]-o.bb[0])*(o.bb[3]-o.bb[1])<(b[2]-b[0])*(b[3]-b[1])*.8);
+  for(const ex of [true,false]){ for(let i=0;i<=N;i++) for(let j=0;j<=N;j++){ const la=b[0]+(b[2]-b[0])*(i+.5)/(N+1), lo=b[1]+(b[3]-b[1])*(j+.5)/(N+1); if(!inPoly({lat:la,lon:lo},R)) continue; if(ex&&inner.some(o=>o.rings.some(r=>inPoly({lat:la,lon:lo},r)))) continue; const d=ed(la,lo); if(d>bd){ bd=d; best=[la,lo]; } } if(best) break; }
+  a._lp=best||[(b[0]+b[2])/2,(b[1]+b[3])/2]; return a._lp; }
 function aeroDraw(){ gAeroA.clearLayers(); gAeroL.clearLayers(); gAeroP.clearLayers(); gGrid.clearLayers(); const on=aeroOn(), C=aeroCfg(); aeroLabels(CFG.layer==='aero'); if(!on) return;
   const b=map.getBounds().pad(.25), z=map.getZoom();
   if(C.grid) drawGrid(z); if(C.mef) drawMef(z);
   if(C.asp){ const shown=[]; AERO.asp.forEach(a=>{ if(!bbHit(a.bb,b)) return; if(a.t==='AWY'&&z<8) return; const st=Object.assign({renderer:aeroCanvas,bubblingMouseEvents:false},aspStyle(a));
       const lyr=L.polygon(a.rings,st); if(st.interactive!==false) lyr.on('click',e=>{ if(MODE) return handleModeClick(e.latlng,null); aeroPop(e.latlng); }); gAeroA.addLayer(lyr); shown.push(a); });
     if(C.lbl&&z>=7){ let n=0; shown.sort((x,y)=>(SUA.has(y.t)?1:0)-(SUA.has(x.t)?1:0)).forEach(a=>{ if(n>90||a.t==='AWY') return; const p1=map.latLngToContainerPoint([a.bb[0],a.bb[1]]), p2=map.latLngToContainerPoint([a.bb[2],a.bb[3]]), w=Math.abs(p2.x-p1.x), h=Math.abs(p2.y-p1.y);
-        const big=a.t==='FIR'||a.t==='UIR'||a.t==='ACC'||a.t==='FIS'; if(w<46||h<30||(big&&z>8)) return; let c=a.rings[0].reduce((s,q)=>[s[0]+q[0]/a.rings[0].length,s[1]+q[1]/a.rings[0].length],[0,0]);
-        if(!inPoly({lat:c[0],lon:c[1]},a.rings[0])) c=[(a.bb[0]+a.bb[2])/2,(a.bb[1]+a.bb[3])/2]; if(!SUA.has(a.t)&&!big){ const q=[a.bb[2]-(a.bb[2]-a.bb[0])*.09,(a.bb[1]+a.bb[3])/2]; if(a.rings.some(r=>inPoly({lat:q[0],lon:q[1]},r))) c=q; } if(!map.getBounds().contains(c)) return; n++;
+        const big=a.t==='FIR'||a.t==='UIR'||a.t==='ACC'||a.t==='FIS'; if(w<46||h<30||(big&&z>8)) return; let c=aspLabelPt(a); if(!map.getBounds().contains(c)) return; n++;
         const k=SUA.has(a.t)?'r':big?'f':'b'; gAeroL.addLayer(L.marker(c,{pane:'aeroLbl',interactive:false,icon:L.divIcon({className:'asp-l asp-'+k,iconSize:null,html:`<b>${esc(a.name)}</b>${big?'':`<i>${a.cls?a.cls+' · ':''}${esc(limTxt(a.hi))}<br>${esc(limTxt(a.lo))}</i>`}`})})); }); } }
   if(C.nav&&z>=7) AERO.nav.forEach(n=>{ if(!b.contains([n.lat,n.lon])||dupNear(n.lat,n.lon,n.id,6)) return; const k=SYM[n.k]?n.k:'VOR';
     const m=L.marker([n.lat,n.lon],{icon:L.divIcon({className:'aero-nav',html:`<svg viewBox="-13 -13 26 26" width="26" height="26">${SYM[k]}</svg>${z>=8?`<span class="navbox">${esc(n.id)} ${esc(n.f)}</span>`:''}`,iconSize:[26,26],iconAnchor:[13,13]}),bubblingMouseEvents:false});
