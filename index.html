@@ -3346,19 +3346,26 @@ ACT.chPickDone=()=>{ endMode(); renderPanel(); };
 /* ===================== live traffic (ADS-B, community networks) ===================== */
 const TRF={list:[],t:0,busy:false,src:'',err:'',alerted:new Set()};
 const gTrf=L.layerGroup().addTo(map);
-async function httpJson(url){ const H=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()&&Capacitor.Plugins&&Capacitor.Plugins.CapacitorHttp;
-  if(H){ const r=await H.get({url,headers:{Accept:'application/json'},connectTimeout:8000,readTimeout:8000}); if(r.status>=400) throw new Error('HTTP '+r.status); return typeof r.data==='string'?JSON.parse(r.data):r.data; }
-  const c=new AbortController(), tm=setTimeout(()=>c.abort(),8000); try{ const r=await fetch(url,{signal:c.signal,cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); } finally{ clearTimeout(tm); } }
+async function httpJson(url){ const N=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()&&Capacitor.Plugins&&Capacitor.Plugins.CapacitorHttp; let nerr='';
+  if(N){ try{ const r=await (N.request?N.request({url,method:'GET',headers:{Accept:'application/json'},connectTimeout:10000,readTimeout:10000}):N.get({url,headers:{Accept:'application/json'}}));
+      if(r.status>=400) throw new Error('HTTP '+r.status); return typeof r.data==='string'?JSON.parse(r.data):r.data; }catch(e){ nerr=String(e.message||e); } }
+  const c=new AbortController(), tm=setTimeout(()=>c.abort(),10000);
+  try{ const r=await fetch(url,{signal:c.signal,cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }
+  catch(e){ throw new Error((e.name==='AbortError'?'timeout':String(e.message||e))+(nerr?' / native: '+nerr:'')); } finally{ clearTimeout(tm); } }
 const FT=0.3048, KT=1852/3600;
 function normAdsbx(j,src){ return (j.ac||j.aircraft||[]).filter(x=>x.lat!=null&&x.lon!=null).map(x=>{ const ab=x.alt_baro==='ground'?0:x.alt_baro; const am=x.alt_geom!=null?x.alt_geom*FT:(typeof ab==='number'?ab*FT:null);
   return {id:x.hex,cs:(x.flight||'').trim(),reg:x.r||'',type:x.t||'',lat:x.lat,lon:x.lon,alt:am,gnd:x.alt_baro==='ground',gs:x.gs!=null?x.gs*KT:null,trk:x.track!=null?x.track:x.true_heading,vs:x.baro_rate!=null?x.baro_rate*FT/60:(x.geom_rate!=null?x.geom_rate*FT/60:null),sq:x.squawk||'',age:x.seen||0,src}; }); }
 function normOpenSky(j){ return (j.states||[]).filter(s=>s[5]!=null&&s[6]!=null).map(s=>({id:s[0],cs:(s[1]||'').trim(),reg:'',type:'',lat:s[6],lon:s[5],alt:s[13]!=null?s[13]:s[7],gnd:!!s[8],gs:s[9],trk:s[10],vs:s[11],sq:s[14]||'',age:s[4]?Date.now()/1000-s[4]:0,src:'OpenSky'})); }
-async function trfFetch(){ if(TRF.busy||!navigator.onLine) return; TRF.busy=true; const c=FLY.pos||(q=>({lat:q.lat,lon:q.lng}))(map.getCenter()), la=c.lat.toFixed(3), lo=c.lon.toFixed(3), R=150;
+async function trfFetch(){ if(TRF.busy) return; if(!navigator.onLine){ TRF.err=t('no internet'); return; } TRF.busy=true; const c=FLY.pos||(q=>({lat:q.lat,lon:q.lng}))(map.getCenter()), la=c.lat.toFixed(3), lo=c.lon.toFixed(3), R=250;
   const S=[['adsb.lol',`https://api.adsb.lol/v2/point/${la}/${lo}/${R}`,normAdsbx],['airplanes.live',`https://api.airplanes.live/v2/point/${la}/${lo}/${R}`,normAdsbx],['adsb.fi',`https://opendata.adsb.fi/api/v2/lat/${la}/lon/${lo}/dist/${R}`,normAdsbx],
-    ['OpenSky',`https://opensky-network.org/api/states/all?lamin=${(c.lat-2.5).toFixed(2)}&lomin=${(c.lon-3.2).toFixed(2)}&lamax=${(c.lat+2.5).toFixed(2)}&lomax=${(c.lon+3.2).toFixed(2)}`,(j)=>normOpenSky(j)]];
-  const order=TRF.src?[S.find(s=>s[0]===TRF.src),...S.filter(s=>s[0]!==TRF.src)]:S; let ok=false;
-  for(const [n,u,f] of order){ try{ const j=await httpJson(u); TRF.list=f(j,n).filter(x=>x.age<60); TRF.src=n; TRF.err=''; TRF.t=Date.now(); ok=true; break; }catch(e){ TRF.err=String(e.message||e); } }
-  if(!ok&&Date.now()-TRF.t>60000) TRF.list=[]; TRF.busy=false; drawTrf(); }
+    ['OpenSky',`https://opensky-network.org/api/states/all?lamin=${(c.lat-4).toFixed(2)}&lomin=${(c.lon-5.3).toFixed(2)}&lamax=${(c.lat+4).toFixed(2)}&lomax=${(c.lon+5.3).toFixed(2)}`,(j)=>normOpenSky(j)]];
+  /* ask every network and merge: coverage over Central Asia is thin, each network may see different aircraft */
+  const res=await Promise.all(S.map(async([n,u,f])=>{ try{ const j=await httpJson(u); const l=f(j,n).filter(x=>x.age<60); return {n,ok:true,l}; }catch(e){ return {n,ok:false,e:String(e.message||e)}; } }));
+  TRF.stat=res.map(r=>({n:r.n,ok:r.ok,c:r.ok?r.l.length:0,e:r.e||''})); TRF.center={lat:c.lat,lon:c.lon,own:!!FLY.pos};
+  const m=new Map(); res.forEach(r=>{ if(r.ok) r.l.forEach(x=>{ const k=String(x.id).toLowerCase(), o=m.get(k); if(!o||x.age<o.age) m.set(k,x); }); });
+  if(res.some(r=>r.ok)){ TRF.list=[...m.values()]; TRF.t=Date.now(); TRF.err=''; TRF.src=res.filter(r=>r.ok&&r.l.length).map(r=>r.n).join(', ')||res.filter(r=>r.ok).map(r=>r.n).join(', '); }
+  else { TRF.err=res.map(r=>r.n+': '+r.e).join('; '); TRF.t=Date.now(); if(TRF.list.length&&Date.now()-(TRF.okT||0)>60000) TRF.list=[]; }
+  if(res.some(r=>r.ok)) TRF.okT=Date.now(); TRF.busy=false; drawTrf(); if(VIEW.tab==='fly') { const e=$('#trf-stat'); if(e) e.innerHTML=trfStatHtml(); } }
 function trfLevel(x){ const p=FLY.pos; if(!p||p.alt==null||x.alt==null||x.gnd) return 0; const d=inverse(p.lat,p.lon,x.lat,x.lon).dist, dz=Math.abs(x.alt-p.alt);
   if(d<1500&&dz<180) return 3; if(d<6000&&dz<300) return 2; if(d<11000&&dz<370) return 1; return 0; }
 function relAltTxt(x){ const p=FLY.pos; if(!p||p.alt==null||x.alt==null) return ''; const dz=x.alt-p.alt; if(CFG.alt==='ft'){ const h=Math.round(dz/FT/100); return (h>=0?'+':'−')+String(Math.abs(h)).padStart(2,'0'); } const h=Math.round(dz/10)*10; return (h>=0?'+':'−')+Math.abs(h); }
@@ -3392,7 +3399,7 @@ pointIcon=function(p,hl,ref,inr){ const nav=isNav(p), k=symKey(p), rot=isAD(p)?m
   const fn=(p.full||'').replace(/^(NDB|VOR|DME|VOR\/DME)\s+/i,''), lbl=nav&&(p.freq||p.full)?`<span class="pt-lbl navbox">${fn&&fn.toUpperCase()!==p.name.toUpperCase()?`<b>${esc(fn)}</b>`:''}<span>${esc(p.freq||'')} <u>${esc(p.name)}</u></span></span>`:`<span class="pt-lbl">${esc(p.name)}</span>`;
   return L.divIcon({className:'pt-ico'+(nav?' nav':'')+(hl?' hl':'')+(ref?' lib':'')+(inr?' inrt':'')+(ref&&!inr&&!nav&&!isAD(p)&&p.type!=='RP'?' minor':''),html:symSvg(k,inr,rot)+lbl,iconSize:[24,24],iconAnchor:[12,12]}); };
 
-Object.assign(RU,{'Charts':'Схемы','Departure & arrival charts':'Схемы вылета и захода','Departure':'Вылет','Arrival & approach':'Прибытие и заход','Circuits':'Полёты по кругу','No aerodromes.':'Нет аэродромов.',
+Object.assign(RU,{'no internet':'нет интернета','{n} aircraft':'бортов: {n}','Shown on the map':'Показано на карте','{t} s ago':'{t} с назад','Search area':'Район поиска','{r} km around {w}':'{r} км вокруг {w}','the aircraft':'ВС','the map centre':'центра карты','Check now':'Проверить сейчас','Checking…':'Проверка…','Charts':'Схемы','Departure & arrival charts':'Схемы вылета и захода','Departure':'Вылет','Arrival & approach':'Прибытие и заход','Circuits':'Полёты по кругу','No aerodromes.':'Нет аэродромов.',
  'Show on map':'Показать на карте','Only this aerodrome':'Только этот аэродром','All aerodromes':'Все аэродромы','Aerodrome card':'Карточка аэродрома','This aerodrome has no runway yet — add it in the aerodrome card to build schemes automatically.':'У аэродрома нет ВПП — добавьте её в карточке аэродрома, чтобы строить схемы автоматически.',
  'Turns are drawn with the radius of a turn at the scheme speed and bank: R = V² / (g·tan β).':'Развороты рисуются радиусом разворота при скорости и крене схемы: R = V² / (g·tg β).','Build holding pattern':'Построить схему ожидания','Holding fix':'Точка ожидания','Inbound course (°)':'Линия пути приближения (°)',
  'Airspeed (km/h)':'Скорость (км/ч)','Rounded turns':'Плавные развороты','Yes':'Да','No':'Нет','Turn radius {r} · rate {w}°/s · 180° in {s} s':'Радиус разворота {r} · угловая скорость {w}°/с · 180° за {s} с',
@@ -3402,9 +3409,12 @@ Object.assign(RU,{'Charts':'Схемы','Departure & arrival charts':'Схемы
  'Scheme saved':'Схема сохранена','Tap the map to add points to the scheme ({n})':'Касайтесь карты, чтобы добавить точки ({n})','Traffic (ADS-B)':'Воздушная обстановка (ADS-B)','on ground':'на земле','Track':'Путь','Source':'Источник','TRAFFIC: {c} {d} {a}':'БОРТ: {c} {d} {a}',
  'Rounded turns on routes (by speed and bank)':'Плавные развороты на маршруте (по скорости и крену)','Live traffic':'Воздушная обстановка','Traffic: {n} aircraft · {s} · {t} s ago':'Бортов: {n} · {s} · {t} с назад','No traffic data yet.':'Данных о бортах пока нет.',
  'Traffic comes from community ADS-B networks (adsb.lol, airplanes.live, adsb.fi, OpenSky) — the same kind of data Flightradar24 shows. It needs internet, shows only aircraft with an ADS-B transponder in receiver coverage, and is for awareness only — not for separation.':'Данные о бортах — из открытых сетей ADS-B (adsb.lol, airplanes.live, adsb.fi, OpenSky), как во Flightradar24. Нужен интернет; видны только борта с ADS-B в зоне приёмников; только для информации, не для эшелонирования.'});
-function vTrf(){ const on=CFG.libShow.trf===true, ago=TRF.t?Math.round((Date.now()-TRF.t)/1000):null;
-  return `<h3>${t('Live traffic')}</h3><div class="actions"><button class="btn${on?' primary':''}" data-act="trfTog">${t('Traffic (ADS-B)')}: ${on?t('Yes'):t('No')}</button></div>
-  <p class="note">${on?(TRF.t?t('Traffic: {n} aircraft · {s} · {t} s ago',{n:TRF.list.length,s:TRF.src,t:ago}):t('No traffic data yet.')+(TRF.err?' ('+esc(TRF.err)+')':'')):''} ${t('Traffic comes from community ADS-B networks (adsb.lol, airplanes.live, adsb.fi, OpenSky) — the same kind of data Flightradar24 shows. It needs internet, shows only aircraft with an ADS-B transponder in receiver coverage, and is for awareness only — not for separation.')}</p>`; }
+function trfStatHtml(){ if(!TRF.stat) return `<p class="note">${t('No traffic data yet.')}${TRF.err?' ('+esc(TRF.err)+')':''}</p>`; const ago=Math.round((Date.now()-TRF.t)/1000), c=TRF.center;
+  return `<dl class="kv">${TRF.stat.map(s=>`<dt>${esc(s.n)}</dt><dd class="${s.ok?(s.c?'st-ok':''):'st-warn'}">${s.ok?t('{n} aircraft',{n:s.c}):esc(s.e)}</dd>`).join('')}<dt>${t('Shown on the map')}</dt><dd>${TRF.list.length} · ${t('{t} s ago',{t:ago})}</dd><dt>${t('Search area')}</dt><dd>${t('{r} km around {w}',{r:460,w:c&&c.own?t('the aircraft'):t('the map centre')})}</dd></dl>`; }
+function vTrf(){ const on=CFG.libShow.trf===true;
+  return `<h3>${t('Live traffic')}</h3><div class="actions"><button class="btn${on?' primary':''}" data-act="trfTog">${t('Traffic (ADS-B)')}: ${on?t('Yes'):t('No')}</button>${on?`<button class="btn" data-act="trfNow">${t('Check now')}</button>`:''}</div>
+  ${on?`<div id="trf-stat">${trfStatHtml()}</div>`:''}<p class="note">${t('Traffic comes from community ADS-B networks (adsb.lol, airplanes.live, adsb.fi, OpenSky) — the same kind of data Flightradar24 shows. It needs internet, shows only aircraft with an ADS-B transponder in receiver coverage, and is for awareness only — not for separation.')}</p>`; }
+ACT.trfNow=()=>{ TRF.t=0; const e=$('#trf-stat'); if(e) e.innerHTML=`<p class="note">${t('Checking…')}</p>`; trfFetch(); };
 ACT.trfTog=()=>{ CFG.libShow.trf=CFG.libShow.trf!==true; saveCfg(); TRF.t=0; drawTrf(); renderPanel(); if(CFG.libShow.trf) trfFetch().then(()=>{ if(VIEW.tab==='fly') renderPanel(); }); };
 { const _ls=ON.libShow; ON.libShow=el=>{ _ls(el); if(el.dataset.k==='trf'){ TRF.t=0; drawTrf(); } }; }
 
