@@ -717,6 +717,130 @@ table.tafd td{white-space:normal;vertical-align:top}table.tafd td.mono{font-size
 #gnSky{width:100%;max-width:300px;aspect-ratio:1;display:block}#gnBars{width:100%;height:150px;display:block}
 @media (max-width:620px){.gn-plots{grid-template-columns:1fr}#gnSky{margin:0 auto}}
 table.fct td small{color:var(--muted)}
+/* ===== v26: Garmin Pilot / Garmin Connect look — black canvas, rounded grey cards, white figures, blue pills ===== */
+:root[data-theme="dark"],:root:not([data-theme]){--bg:#000000;--surface:#1c1c1e;--surface-2:#2c2c2e;--line:#38383a;--fg:#ffffff;--muted:#8e8e93;--accent:#1a7cf5;--accent-fg:#ffffff;--accent-soft:#0d2a52;--data:#ffffff;
+  --ok:#30d158;--warn:#ff9f0a;--danger:#ff453a;--halo:#000000;
+  --g-bg:#000000;--g-f1:#1c1c1e;--g-f2:#1c1c1e;--g-bd:#1c1c1e;--g-lbl:#8e8e93;--g-val:#ffffff;--g-k1:#000000;--g-k2:#000000;--g-kbd:#000000;--g-kfg:#ffffff;--g-on1:#1a7cf5;--g-on2:#1a7cf5;--g-onfg:#ffffff;--g-bar1:#000000;--g-bar2:#000000;--g-mut:#8e8e93;--g-tbd:#1c1c1e;--tile1:#1c1c1e;--tile2:#1c1c1e;
+  --s-bar:#000000;--s-bar-bd:#1c1c1e;--s-btn:#2c2c2e;--s-btn-bd:#2c2c2e;--s-btn-fg:#ffffff;--s-mut:#aeaeb2;--s-on:#1a7cf5;--s-on-fg:#ffffff;--s-ico:#ffffff;--s-chip-on:#1a7cf5;--s-chip-on-bd:#1a7cf5;--s-chip-on-fg:#ffffff;--s-card:#1c1c1e;--s-shadow:none;--s-hd:#1c1c1e;--s-hd-fg:#ffffff}
+@media (prefers-color-scheme: light){ :root:not([data-theme]){--bg:#f2f2f7;--surface:#ffffff;--surface-2:#e9e9ee;--line:#d8d8dd;--fg:#000000;--muted:#6c6c70;--accent:#1a6fe0;--accent-fg:#ffffff;--accent-soft:#dbe8fb;--data:#000000;--ok:#1f9d45;--warn:#c76b00;--danger:#d70015;--halo:#ffffff;
+  --g-bg:#f2f2f7;--g-f1:#ffffff;--g-f2:#ffffff;--g-bd:#ffffff;--g-lbl:#6c6c70;--g-val:#000000;--g-k1:#f2f2f7;--g-k2:#f2f2f7;--g-kbd:#f2f2f7;--g-kfg:#1c1c1e;--g-on1:#1a6fe0;--g-on2:#1a6fe0;--g-onfg:#ffffff;--g-bar1:#f2f2f7;--g-bar2:#f2f2f7;--g-mut:#6c6c70;--g-tbd:#ffffff;--tile1:#ffffff;--tile2:#ffffff;
+  --s-bar:#f2f2f7;--s-bar-bd:#d8d8dd;--s-btn:#e9e9ee;--s-btn-bd:#e9e9ee;--s-btn-fg:#000000;--s-mut:#6c6c70;--s-on:#1a6fe0;--s-on-fg:#ffffff;--s-ico:#1c1c1e;--s-chip-on:#1a6fe0;--s-chip-on-bd:#1a6fe0;--s-chip-on-fg:#ffffff;--s-card:#ffffff;--s-shadow:none;--s-hd:#ffffff;--s-hd-fg:#000000} }
+:root[data-theme="light"]{--bg:#f2f2f7;--surface:#ffffff;--surface-2:#e9e9ee;--line:#d8d8dd;--fg:#000000;--muted:#6c6c70;--accent:#1a6fe0;--accent-fg:#ffffff;--accent-soft:#dbe8fb;--data:#000000;--ok:#1f9d45;--warn:#c76b00;--danger:#d70015;--halo:#ffffff;
+  --g-bg:#f2f2f7;--g-f1:#ffffff;--g-f2:#ffffff;--g-bd:#ffffff;--g-lbl:#6c6c70;--g-val:#000000;--g-k1:#f2f2f7;--g-k2:#f2f2f7;--g-kbd:#f2f2f7;--g-kfg:#1c1c1e;--g-on1:#1a6fe0;--g-on2:#1a6fe0;--g-onfg:#ffffff;--g-bar1:#f2f2f7;--g-bar2:#f2f2f7;--g-mut:#6c6c70;--g-tbd:#ffffff;--tile1:#ffffff;--tile2:#ffffff;
+  --s-bar:#f2f2f7;--s-bar-bd:#d8d8dd;--s-btn:#e9e9ee;--s-btn-bd:#e9e9ee;--s-btn-fg:#000000;--s-mut:#6c6c70;--s-on:#1a6fe0;--s-on-fg:#ffffff;--s-ico:#1c1c1e;--s-chip-on:#1a6fe0;--s-chip-on-bd:#1a6fe0;--s-chip-on-fg:#ffffff;--s-card:#ffffff;--s-shadow:none;--s-hd:#ffffff;--s-hd-fg:#000000}
+body{background:var(--bg)}
+/* sheet = black canvas; content sits in rounded cards */
+#sheet{background:var(--bg)!important;border-top:0!important;border-radius:18px 18px 0 0!important;box-shadow:0 -10px 30px rgba(0,0,0,.45)!important}
+#sheet .grab span{background:#48484a}
+.status{color:var(--muted)!important;font-family:var(--f-body)!important}
+.tabs{border-bottom:0!important}
+.ghead b{font:700 21px/1.2 var(--f-body)!important;color:var(--fg)}
+.ghead .gk{background:var(--surface-2)!important;border:0!important;border-radius:999px!important;min-height:34px;padding:0 14px;color:var(--fg)!important}
+#panel h3{font:700 16px/1.25 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--fg)!important;margin:22px 2px 9px}
+#panel h3::after{display:none}
+.ph h2{font:700 24px/1.15 var(--f-body)!important}
+/* buttons: pills */
+.btn,.gk{border-radius:999px!important;border:0!important;background:var(--surface-2)!important;color:var(--fg)!important;font:600 14.5px/1.15 var(--f-body)!important;min-height:42px;padding:8px 18px;box-shadow:none!important}
+.btn svg{color:currentColor!important}
+.btn.primary{background:var(--accent)!important;color:#fff!important}
+.btn.big{min-height:50px;font-size:16px!important}
+.btn.sm{min-height:34px;padding:4px 14px;font-size:13.5px!important}
+.btn.danger{color:var(--danger)!important}
+.btn.danger.armed,.btn.stop{background:var(--danger)!important;color:#fff!important}
+.seg{border:0!important;border-radius:999px!important;background:var(--surface-2)!important;padding:3px;gap:2px;box-shadow:none!important}
+.seg button{border:0!important;border-radius:999px!important;color:var(--fg)!important;opacity:.75;font:600 13.5px/1 var(--f-body)!important;padding:8px 14px}
+.seg button[aria-pressed="true"]{background:var(--accent)!important;color:#fff!important;opacity:1}
+.chip-b{border:0!important;border-radius:999px!important;background:var(--surface-2)!important;color:var(--fg)!important;font:600 13px/1 var(--f-body)!important;padding:9px 14px;box-shadow:none!important}
+.chip-b[aria-pressed="true"]{background:var(--accent)!important;color:#fff!important}
+/* lists and key-value blocks as cards with hairline separators */
+#panel .list{background:var(--surface);border:0;border-radius:14px;padding:0 14px;overflow:hidden}
+#panel .list li{border-bottom:0;border-top:.5px solid var(--line)}
+#panel .list li:first-child{border-top:0}
+#panel .row{padding:12px 0;min-height:54px}
+#panel .row b{font-weight:600;font-size:15px}
+#panel .row small{color:var(--muted)}
+#panel .list .row:not(.static)::after{content:"";flex:0 0 8px;width:8px;height:8px;border-right:2px solid var(--muted);border-top:2px solid var(--muted);transform:rotate(45deg);margin:0 4px 0 2px;opacity:.7}
+#panel dl.kv{background:var(--surface);border-radius:14px;padding:4px 14px;margin:8px 0;gap:0 14px}
+#panel dl.kv dt,#panel dl.kv dd{padding:10px 0;border-top:.5px solid var(--line)}
+#panel dl.kv dt:first-of-type,#panel dl.kv dd:first-of-type{border-top:0}
+#panel dl.kv dd{font-family:var(--f-body);font-weight:600;color:var(--fg)}
+#panel table.wxt{background:var(--surface);border-radius:14px;overflow:hidden;border-collapse:separate;border-spacing:0}
+#panel table.wxt td,#panel table.wxt th{border:0;border-top:.5px solid var(--line)}
+#panel table.wxt tr:first-child td,#panel table.wxt tr:first-child th{border-top:0}
+#panel table.wxt th{background:transparent;color:var(--muted);font-weight:600}
+.note{color:var(--muted)!important}
+/* form fields */
+.f>span{font:500 13px/1.2 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important}
+.f input,.f select,.f textarea{background:var(--surface)!important;border:0!important;border-radius:12px!important;min-height:46px;color:var(--fg)}
+.f input.num{color:var(--fg)!important;font-weight:600}
+.search input{background:var(--surface)!important;border:0!important;border-radius:12px!important}
+.toggle{background:var(--surface);border-radius:12px;padding:11px 14px!important;margin:6px 0}
+.toggle input{accent-color:var(--accent)!important}
+/* top data tiles like the Garmin Pilot flight summary */
+#hud{background:var(--bg)!important;border-bottom:0!important}
+.gf{background:var(--surface)!important;border:0!important;border-radius:10px!important;padding:4px 8px 5px!important}
+.gf .k{font:500 10.5px/1.1 var(--f-body)!important;color:var(--muted)!important;letter-spacing:.02em!important}
+.gf .v{font:700 19px/1.15 var(--f-body)!important;color:var(--fg)}
+.gf .v small{color:var(--muted)!important;font-weight:600}
+.gf.mag .v{color:var(--g-mag)!important}
+#gann{color:var(--muted)}
+#gnav{background:var(--bg)!important;border-top:0!important}
+/* bottom tab bar */
+#gsoft{background:var(--bg)!important;border-top:.5px solid var(--line)!important;box-shadow:none!important}
+.sk{background:transparent!important;border:0!important;border-radius:10px!important;color:var(--fg)!important;box-shadow:none!important}
+.sk svg{color:currentColor!important}
+.sk span{font:500 10px/1 var(--f-body)!important;text-transform:none!important}
+.sk.on{background:var(--accent)!important;color:#fff!important}
+.sk .dto{color:currentColor!important}
+/* map buttons */
+.fab{background:color-mix(in srgb,var(--surface) 92%,transparent)!important;border:0!important;border-radius:12px!important;color:var(--fg)!important;box-shadow:0 2px 10px rgba(0,0,0,.35)!important}
+.fab.on{background:var(--accent)!important;color:#fff!important}
+.leaflet-control-zoom a{background:color-mix(in srgb,var(--surface) 92%,transparent)!important;color:var(--fg)!important;border:0!important}
+.leaflet-control-zoom{border:0!important;border-radius:12px!important;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.35)!important}
+#layerMenu{background:var(--surface)!important;border:0!important;border-radius:16px!important;box-shadow:0 10px 30px rgba(0,0,0,.5)!important}
+#layerMenu button{border-radius:10px!important}
+#layerMenu label.lchip{border:0!important;background:var(--surface-2)!important;color:var(--fg)!important}
+#layerMenu label.lchip:has(input:checked){background:var(--accent)!important;color:#fff!important;box-shadow:none!important}
+#layerMenu label.lchip:has(input:checked) .ico{color:#fff}
+.leaflet-popup-content-wrapper{border:0!important;border-radius:14px!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface)!important}
+#toast{border:0!important;border-radius:999px!important;background:var(--surface-2)!important;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+/* home: Garmin Connect "at a glance" cards */
+.hgrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+.ht{background:var(--surface)!important;border:0!important;border-radius:16px!important;min-height:96px!important;aspect-ratio:auto!important;align-items:flex-start!important;justify-content:space-between!important;padding:12px!important;--ic:var(--accent)}
+.ht svg{width:20px!important;height:20px!important;padding:8px;box-sizing:content-box;border-radius:50%;background:color-mix(in srgb,var(--ic) 20%,transparent);color:var(--ic)!important}
+.ht span{font:600 13.5px/1.2 var(--f-body)!important;text-align:left!important;color:var(--fg)!important}
+.ht.mag{--ic:#ff375f}.ht.cy{--ic:#0a84ff}.ht.grn{--ic:#30d158}.ht.amb{--ic:#ff9f0a}.ht:not(.mag):not(.cy):not(.grn):not(.amb){--ic:#8e8e93}
+.ht:active{transform:scale(.97)}
+#glance{margin:0 0 14px}
+.gl-card{background:var(--surface);border-radius:16px;padding:14px}
+.gl-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.gl-top b{font:700 16px var(--f-body)}.gl-top small{color:var(--muted);font-size:12.5px}
+.gl-rings{display:flex;justify-content:space-around;gap:6px}
+.gl-ring{position:relative;width:31%;max-width:118px;text-align:center}
+.gl-ring svg{width:100%;height:auto;display:block}
+.gl-tr{fill:none;stroke:var(--surface-2);stroke-width:7}
+.gl-pr{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dasharray .6s}
+.gl-c{position:absolute;left:0;right:0;top:0;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gl-c b{font:700 22px/1 var(--f-body)}.gl-c small{font-size:11px;color:var(--muted);margin-top:3px}
+.gl-ring span{display:block;margin-top:4px;font-size:12px;color:var(--muted)}
+.gl-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.gl-tiles div{background:var(--surface-2);border-radius:10px;padding:6px 8px;min-width:0}
+.gl-tiles small{display:block;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gl-tiles b{display:block;font:700 15px/1.25 var(--f-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sum{background:none!important;border:0!important;gap:8px!important;border-radius:0!important}
+.sum>div{background:var(--surface)!important;border-radius:12px;padding:8px 11px!important}
+.sum span{font:500 11.5px/1.1 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important}
+.sum b{font:700 18px/1.2 var(--f-body)!important;color:var(--fg)!important}
+.leg{background:var(--surface)!important;border:0!important;border-radius:14px!important}
+.leg-g span{font:500 11px/1.1 var(--f-body)!important;letter-spacing:0!important;text-transform:none!important}
+.leg-g i{font-family:var(--f-body)!important;font-weight:600;color:var(--fg)!important}
+.badge{border-radius:999px!important;padding:3px 8px!important;letter-spacing:.02em!important}
+.back{color:var(--accent)!important;font-weight:600}
+.eye{border:0!important;border-radius:50%!important;background:var(--surface-2)!important;color:var(--muted)!important;flex:0 0 40px!important;height:40px!important}
+.eye.on{color:var(--accent)!important}
+#layerMenu button[aria-pressed="true"] .lm-fb,#layerMenu button[aria-pressed="true"] small{color:rgba(255,255,255,.78)!important}
+.gl-tiles b i{font-style:normal;font-size:11px;color:var(--muted);font-weight:600;margin-left:2px}
 </style>
 </head>
 <body><div id="tawsBan" hidden></div>
@@ -4286,6 +4410,24 @@ Object.assign(RU,{'Satellites':'Спутники','Satellite positioning was swi
  'WGS-84 ellipsoid + correction {c} m':'эллипсоид WGS-84 + поправка {c} м','Receiver':'Приёмник','System':'Система','Used':'В решении','Visible':'Видно','USA':'США','Russia':'Россия','Japan':'Япония','China':'Китай','EU':'ЕС','India':'Индия',
  'Waiting for satellite data… Go outside or near a window; the first fix can take up to a minute.':'Ожидание данных спутников… Выйдите на открытое место или к окну; первое решение может занять до минуты.','Start GPS to see the satellites.':'Включите GPS, чтобы увидеть спутники.',
  'Sky plot: centre — overhead, ring — horizon, north up. Filled — used in the position, hollow — visible only. Bars: signal strength C/N0 (above 35 dB-Hz is good).':'Карта неба: центр — зенит, внешний круг — горизонт, север вверху. Закрашенные — участвуют в решении, пустые — только видны. Столбики: сила сигнала C/N0 (выше 35 дБ-Гц — хорошо).'});
+
+/* ===== home "at a glance" card (Garmin Connect style): route progress, GPS, time; summary tiles like the Garmin Pilot flight page ===== */
+function glRing(p,col,big,small,lbl){ const r=34, c=2*Math.PI*r, k=Math.max(0,Math.min(1,p||0));
+  return `<div class="gl-ring"><svg viewBox="0 0 84 84"><circle cx="42" cy="42" r="${r}" class="gl-tr"/><circle cx="42" cy="42" r="${r}" class="gl-pr" stroke="${col}" stroke-dasharray="${(c*k).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 42 42)"/></svg><div class="gl-c"><b>${big}</b><small>${small}</small></div><span>${lbl}</span></div>`; }
+function vGlance(){ const r=Rt(FLY.routeId)||MS.routes[0], legs=r?routeLegs(r):[], tot=legs.length?legs[legs.length-1].cum:0, totT=legs.length?legs[legs.length-1].cumT:null, nav=FLY.nav||{}, p=FLY.pos, flying=!!(FLY.gps||FLY.sim)&&!!p;
+  const act=flying&&FLY.routeId&&r&&r.id===FLY.routeId, rem=act&&nav.remain!=null?nav.remain:tot, prog=tot?1-rem/tot:0;
+  const used=GN.sats.filter(s=>s.u).length, acc=p&&p.acc?p.acc:null;
+  const fuel0=r&&r.fuel0, fuelEnd=legs.length?legs[legs.length-1].fuelRem:null;
+  const tiles=act?[[t('Next'),nav.tgt?esc(nav.tgt.name):'—'],[t('Distance'),nav.dist!=null?fmtDistN(nav.dist)+`<i>${ul(CFG.dist)}</i>`:'—'],['ETE',nav.ete!=null?fmtEte(nav.ete):'—'],['ETA',nav.eta?fmtClock(nav.eta):'—']]
+    :[[t('Route'),r?esc(r.name):'—'],[t('Distance'),tot?fmtDistN(tot)+`<i>${ul(CFG.dist)}</i>`:'—'],['ETE',totT?fmtEte(totT):'—'],[t('Fuel'),fuelEnd!=null?Math.round(fuelOut(fuelEnd))+`<i>${ul(CFG.fuel||'kg')}</i>`:(fuel0!=null?Math.round(fuelOut(fuel0))+`<i>${ul(CFG.fuel||'kg')}</i>`:'—')]];
+  return `<div class="gl-card"><div class="gl-top"><b>${act?t('In flight'):t('At a glance')}</b><small>${r?esc(r.name):t('No route')}</small></div>
+    <div class="gl-rings">${glRing(prog,'#1a7cf5',tot?fmtDistN(rem):'—',ul(CFG.dist),act?t('To go'):t('Route'))}
+      ${glRing(acc!=null?Math.min(1,10/Math.max(acc,1)):0,acc==null?'#8e8e93':acc<=15?'#30d158':acc<=50?'#ff9f0a':'#ff453a',acc!=null?'±'+Math.round(acc):'—','m','GPS'+(used?' · '+used+' '+t('sat.'):''))}
+      ${glRing(p&&FLY.gs!=null?Math.min(1,FLY.gs/150):0,'#ff375f',p&&FLY.gs!=null?Math.round(spdOut(FLY.gs)):'—',spdU(),t('Ground speed'))}</div>
+    <div class="gl-tiles">${tiles.map(([k,v])=>`<div><small>${k}</small><b>${v}</b></div>`).join('')}</div></div>`; }
+{ const _vh7=vHome; vHome=function(){ return `<div id="glance">${vGlance()}</div>`+_vh7(); }; }
+setInterval(()=>{ if(VIEW.tab==='home'){ const g=$('#glance'); if(g) g.innerHTML=vGlance(); } },2000);
+Object.assign(RU,{'At a glance':'Обзор','In flight':'В полёте','Next':'Следующая','Distance':'Расстояние','To go':'Осталось','sat.':'спутн.','Ground speed':'Путевая скорость','No route':'Нет маршрута'});
 
 /* ================= boot ================= */
 (()=>{ let seed=null; try{ const tx=$('#fmn-seed').textContent.trim(); if(tx) seed=JSON.parse(tx); }catch(e){}
