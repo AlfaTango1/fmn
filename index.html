@@ -2972,9 +2972,9 @@ function updateSectionHtml(){
   <dl class="kv"><dt>${t('Data version')}</dt><dd>${esc(LIB.builtin||'—')}</dd><dt>${t('Last check')}</dt><dd>${ck?fmtClock(ck)+' '+ck.toISOString().slice(0,10):'—'}</dd></dl>
   <div class="actions" style="margin-top:8px"><button class="btn" data-act="updNow">${t('Check for updates')}</button></div>
   <h3>${t('State border')}</h3>
-  <dl class="kv"><dt>${t('Source')}</dt><dd>${t('LSIB, US Department of State')}</dd></dl>
-  <p class="note">${t('State border of Uzbekistan from LSIB (Large Scale International Boundaries, US Department of State), the same line as on the Esri satellite layer. Includes the enclaves Sokh, Shakhimardan, Chong-Kara and Dzhangail. Built in, works offline.')}</p>
-  <div class="grid2" style="align-items:end"><label class="f"><span>${t('Border warning ({u})',{u:ul(CFG.dist)})}</span><input class="num" data-on="cfgDist" data-k="brdWarnM" inputmode="decimal" value="${+distOut(CFG.brdWarnM||10000).toFixed(1)}"></label></div>
+  <dl class="kv"><dt>${t('Source')}</dt><dd>${BORDER.src==='ESRI'?'Esri World Countries '+esc(BORDER.date||''):t('LSIB, US Department of State')}</dd></dl>
+  <p class="note">${BORDER.src==='ESRI'?t('State border of Uzbekistan from Esri (World Countries, Esri / Garmin) — the same boundary data as the Esri satellite map. Over the Aral Sea and Sarygamysh Lake the LSIB line is used. Saved on the device, works offline.'):t('Built-in border: LSIB (US Department of State). When online, the Esri border matching the Esri satellite map is downloaded automatically.')}${BORDER.esriErr&&BORDER.src!=='ESRI'?' <span class="st-warn">'+esc(BORDER.esriErr)+'</span>':''}</p>
+  <div class="grid2" style="align-items:end"><label class="f"><span>${t('Border warning ({u})',{u:ul(CFG.dist)})}</span><input class="num" data-on="cfgDist" data-k="brdWarnM" inputmode="decimal" value="${+distOut(CFG.brdWarnM||10000).toFixed(1)}"></label><button class="btn" data-act="brdEsri">${t('Load Esri border')}</button></div>
   <p class="note">${t('Aerodromes with remarks after data check: {n}.',{n:LIB.ads.filter(a=>validateAd(a).length).length})}</p>
   ${u?list(u.added,'New')+list(u.changed,'Changed')+list(u.removed,'Removed'):''}`;
 }
@@ -3037,7 +3037,7 @@ function borderDist(lat,lon){
     for(let i=0;i<c.seg.length-1;i++) best=Math.min(best,segDist({lat,lon},c.seg[i],c.seg[i+1])); });
   return best;
 }
-const inUzb=(lat,lon)=>(BORDER.polys||[]).some(p=>inPoly({lat,lon},p[0])&&!p.slice(1).some(h=>inPoly({lat,lon},h)));
+const inUzb=(lat,lon)=>BORDER.inside?BORDER.inside(lat,lon):(BORDER.polys||[]).some(p=>inPoly({lat,lon},p[0])&&!p.slice(1).some(h=>inPoly({lat,lon},h)));
 function dpSimplify(pts,tol){ if(pts.length<3) return pts; const k=Math.cos(rad(pts[0][0]))*111320;
   const keep=new Uint8Array(pts.length); keep[0]=keep[pts.length-1]=1; const st=[[0,pts.length-1]];
   while(st.length){ const [a,b]=st.pop(); let dm=0,ix=-1; const A=pts[a],B=pts[b];
@@ -3071,7 +3071,45 @@ function assembleRings(ways){ const out=[]; for(const role of ['outer','inner'])
         for(let i=0;i<pool.length;i++){ const w=pool[i]; if(eq(w[0],end)){ cur=cur.concat(w.slice(1)); } else if(eq(w[w.length-1],end)){ cur=cur.concat(w.slice(0,-1).reverse()); } else continue; pool.splice(i,1); grown=true; break; } }
       if(!eq(cur[0],cur[cur.length-1])) return null; if(cur.length>3) out.push({role,g:cur.slice(0,-1)}); } }
   return out.length?out:null; }
-async function initBorder(){ loadBuiltinBorder(); renderBorder(); try{ TileDB.del&&TileDB.del('border:osm2'); }catch(e){} }
+/* Esri boundary (World Countries, Esri / Garmin — the same boundary family as the Esri satellite and boundary layers).
+   Downloaded once when online, checked against the built-in LSIB border, cached, refreshed every 30 days.
+   Stretches where Esri follows a shoreline (Aral Sea, Sarygamysh) are replaced by the LSIB line through the water. */
+const ESRI_BRD='https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries/FeatureServer/0/query?where=ISO_CC%3D%27UZ%27&outFields=COUNTRY,ISO_CC&returnGeometry=true&outSR=4326&geometryPrecision=6&maxAllowableOffset=0&f=geojson';
+async function brdGet(url){ const N=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()&&Capacitor.Plugins&&Capacitor.Plugins.CapacitorHttp;
+  if(N){ const r=await N.request({url,method:'GET',headers:{Accept:'application/json'},connectTimeout:20000,readTimeout:60000}); if(r.status>=400) throw new Error('HTTP '+r.status); return typeof r.data==='string'?JSON.parse(r.data):r.data; }
+  const c=new AbortController(), tm=setTimeout(()=>c.abort(),60000); try{ const r=await fetch(url,{signal:c.signal,cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); } finally{ clearTimeout(tm); } }
+function lineDistIdx(lines){ const ch=[]; lines.forEach(l=>{ for(let i=0;i<l.length-1;i+=30){ const seg=l.slice(i,Math.min(l.length,i+31)); let s=90,n=-90,w=180,e=-180; seg.forEach(([la,lo])=>{s=Math.min(s,la);n=Math.max(n,la);w=Math.min(w,lo);e=Math.max(e,lo);}); ch.push({seg,s,n,w,e}); } });
+  return (lat,lon)=>{ let best=Infinity; const k=Math.cos(rad(lat))*111320; for(const c of ch){ const dla=Math.max(0,c.s-lat,lat-c.n)*110540, dlo=Math.max(0,c.w-lon,lon-c.e)*k; if(Math.hypot(dla,dlo)>best) continue; for(let i=0;i<c.seg.length-1;i++) best=Math.min(best,segDist({lat,lon},c.seg[i],c.seg[i+1])); } return best; }; }
+function runs(pts,keep,minLen){ const out=[]; let cur=[]; pts.forEach((p,i)=>{ if(keep[i]) cur.push(p); else { if(cur.length>=minLen) out.push(cur); cur=[]; } }); if(cur.length>=minLen) out.push(cur);
+  /* a closed ring: join the last run with the first when both touch the ends */
+  if(out.length>1&&keep[0]&&keep[pts.length-1]){ const a=out.pop(); out[0]=a.concat(out[0]); } return out; }
+function buildEsriBorder(gj){ const lsib=BORDER.lsibPolys||BORDER.polys; if(!lsib||!lsib.length) return null;
+  const polys=[]; (gj.features||[]).forEach(f=>{ const g=f.geometry; if(!g) return; const ps=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[]; ps.forEach(p=>polys.push(p.map(r=>{ const q=r.map(c=>[+c[1].toFixed(6),+c[0].toFixed(6)]); if(q.length>1&&q[0][0]===q[q.length-1][0]&&q[0][1]===q[q.length-1][1]) q.pop(); return q; }))); });
+  const npts=polys.flat().reduce((s,r)=>s+r.length,0); if(npts<3000) return {err:'generalized ('+npts+' points)'};
+  const ar=polysArea(polys), al=polysArea(lsib); if(Math.abs(ar/al-1)>0.05) return {err:'area '+Math.round(ar)+' vs '+Math.round(al)};
+  const dL=lineDistIdx(lsib.flat().map(r=>r.concat([r[0]])));
+  const eLines=[]; let nk=0,sum=0;
+  polys.flat().forEach(r=>{ const ring=r.concat([r[0]]); const keep=ring.map(([la,lo])=>{ const d=dL(la,lo); const k=d<=4000; if(k){ nk++; sum+=d; } return k; }); runs(ring,keep,2).forEach(x=>eLines.push(x)); });
+  if(!eLines.length||sum/nk>1500) return {err:'does not match LSIB'};
+  const dE=lineDistIdx(eLines), fill=[];
+  lsib.flat().forEach(r=>{ const ring=r.concat([r[0]]); const far=ring.map(([la,lo])=>dE(la,lo)>4000);
+    /* widen each LSIB fill stretch by one point on both sides so it meets the Esri line */
+    const keep=far.map((f,i)=>f||far[i-1]||far[i+1]||(i===0&&far[ring.length-2])||(i===ring.length-1&&far[1])); runs(ring,keep,2).forEach(x=>fill.push(x)); });
+  return {polys,lines:eLines.concat(fill),fill:fill.length,npts};
+}
+function useEsriBorder(rec){ BORDER.esri=rec; BORDER.src='ESRI'; BORDER.date=rec.date; const ep=rec.polys, dE=lineDistIdx(rec.lines.slice(0,rec.lines.length-rec.fill));
+  setBorderLines(rec.lines,'ESRI',rec.date); BORDER.src='ESRI';
+  BORDER.inside=(lat,lon)=>{ const inE=ep.some(p=>inPoly({lat,lon},p[0])&&!p.slice(1).some(h=>inPoly({lat,lon},h))); if(inE) return true;
+    /* over the Aral Sea and Sarygamysh, where Esri has a shoreline instead of the border, the LSIB polygon decides */
+    return (BORDER.lsibPolys||[]).some(p=>inPoly({lat,lon},p[0])&&!p.slice(1).some(h=>inPoly({lat,lon},h)))&&dE(lat,lon)>4000; }; }
+async function fetchEsriBorder(manual){ if(navigator.onLine===false){ if(manual) toast(t('No connection.'),true); return false; }
+  if(manual) toast(t('Downloading the Esri border…'));
+  try{ const gj=await brdGet(ESRI_BRD); const b=buildEsriBorder(gj); if(!b||b.err) throw new Error(b?b.err:'no data');
+    const rec={date:new Date().toISOString().slice(0,10),polys:b.polys,lines:b.lines,fill:b.fill,npts:b.npts}; await TileDB.put('border:esri',rec); useEsriBorder(rec); renderBorder();
+    CFG.esriBrdT=Date.now(); saveCfg(); if(manual||VIEW.tab==='more'){ toast(t('Esri border loaded ({n} points).',{n:b.npts})); if(VIEW.tab==='more') renderPanel(); } return true;
+  }catch(e){ BORDER.esriErr=String(e.message||e); if(manual){ toast(t('Could not load the Esri border ({e}). The built-in border is used.',{e:BORDER.esriErr}),true); if(VIEW.tab==='more') renderPanel(); } return false; } }
+async function initBorder(){ loadBuiltinBorder(); BORDER.lsibPolys=BORDER.polys; const rec=await TileDB.get('border:esri'); if(rec&&rec.lines&&rec.lines.length&&rec.polys) useEsriBorder(rec);
+  renderBorder(); if(!rec||!CFG.esriBrdT||Date.now()-CFG.esriBrdT>30*86400e3) setTimeout(()=>fetchEsriBorder(false),5000); }
 /* --- flight helpers: nearest aerodromes, fuel/bingo, stopwatch, mark position --- */
 const MIL={fuel:null,fuelT:null,reserve:null,watch:null,watchAcc:0,borderState:0};
 function nearestAds(pos,n=5){ return LIB.ads.filter(a=>a.type==='AD').map(a=>({a,d:inverse(pos.lat,pos.lon,a.lat,a.lon)})).sort((x,y)=>x.d.dist-y.d.dist).slice(0,n); }
@@ -3111,7 +3149,7 @@ Object.assign(ACT,{
   milWatchReset:()=>{ MIL.watch=null; MIL.watchAcc=0; renderPanel(); milHud(); },
   milMark:()=>{ const p=FLY.pos; if(!p) return; const d=new Date(); const nm='MK'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
     const pt=mkP(nm,'LMK',p.lat,p.lon,{note:`${d.toISOString()} ${p.alt!=null?fmtAlt(p.alt):''}`}); MS.points.push(pt); queueElev(pt); save(); renderMap(); toast(t('Position marked: {n}',{n:nm})); },
-  brdNow:()=>fetchOsmBorder(true)
+  brdNow:()=>fetchOsmBorder(true), brdEsri:()=>fetchEsriBorder(true)
 });
 /* default magnetic variation for the region from WMM, once, unless set by the user */
 async function autoDefaultVar(){ if(CFG.varSet||navigator.onLine===false) return; const c=map.getCenter(); const v=await lookupVar(c.lat||41.3,c.lng||69.3); if(v!=null){ CFG.magVar=v; CFG.varSet='WMM'; saveCfg(); unitsChanged(); } }
@@ -3374,7 +3412,7 @@ Object.assign(RU,{
 'Check against the AIP':'Сверьте с AIP','Civil twilight':'Гражданские сумерки','Could not load the precise border. The built-in border is used.':'Не удалось загрузить точную границу. Используется встроенная.',
 'Detailed border from OpenStreetMap (accuracy about tens of metres), checked for plausibility and refreshed every 30 days.':'Подробная граница OpenStreetMap (точность порядка десятков метров), проверена на достоверность, обновляется раз в 30 дней.',
 'Downloading the precise border…':'Загрузка точной границы…','FUEL':'ТОПЛ.','Fuel is counted down with the route fuel flow ({f}); BINGO warns when fuel to the last route point plus reserve is no longer enough.':'Остаток уменьшается по расходу маршрута ({f}); БИНГО предупреждает, когда топлива до последнего пункта маршрута с учётом резерва уже не хватает.',
-'Fuel now ({u})':'Топливо сейчас ({u})','Fuel set: {f}':'Топливо: {f}','Load precise border':'Обновить границу','LSIB, US Department of State':'LSIB, Госдепартамент США','State border of Uzbekistan from LSIB (Large Scale International Boundaries, US Department of State), the same line as on the Esri satellite layer. Includes the enclaves Sokh, Shakhimardan, Chong-Kara and Dzhangail. Built in, works offline.':'Государственная граница Узбекистана по данным LSIB (Large Scale International Boundaries, Госдепартамент США) — та же линия, что на спутниковом слое Esri. Включает анклавы Сох, Шахимардан, Чон-Кара и Джангайл. Встроена в приложение, работает без связи.','updated online':'обновлено онлайн','built-in':'встроенная','Detailed state border from OpenStreetMap (accuracy about tens of metres), including the enclaves. Neighbouring state borders are shown with a thinner line. When online, the border is refreshed every 30 days and accepted only after a consistency check.':'Подробная государственная граница по данным OpenStreetMap (точность порядка десятков метров), включая анклавы. Границы соседних государств показаны тонкой линией. При наличии связи граница обновляется раз в 30 дней и принимается только после проверки.','Mark position':'Отметить место','Nearest aerodromes':'Ближайшие аэродромы','No elevation in source':'В источнике нет превышения','OUTSIDE':'ВНЕ',
+'Fuel now ({u})':'Топливо сейчас ({u})','Fuel set: {f}':'Топливо: {f}','Load precise border':'Обновить границу','LSIB, US Department of State':'LSIB, Госдепартамент США','Load Esri border':'Загрузить границу Esri','Downloading the Esri border…':'Загрузка границы Esri…','Esri border loaded ({n} points).':'Граница Esri загружена ({n} точек).','Could not load the Esri border ({e}). The built-in border is used.':'Не удалось загрузить границу Esri ({e}). Используется встроенная граница.','State border of Uzbekistan from Esri (World Countries, Esri / Garmin) — the same boundary data as the Esri satellite map. Over the Aral Sea and Sarygamysh Lake the LSIB line is used. Saved on the device, works offline.':'Государственная граница Узбекистана по данным Esri (World Countries, Esri / Garmin) — те же данные границ, что на спутниковой карте Esri. Над Аральским морем и озером Сарыкамыш используется линия LSIB. Сохранена на устройстве, работает без связи.','Built-in border: LSIB (US Department of State). When online, the Esri border matching the Esri satellite map is downloaded automatically.':'Встроенная граница: LSIB (Госдепартамент США). При наличии связи автоматически загружается граница Esri, совпадающая со спутниковой картой Esri.','State border of Uzbekistan from LSIB (Large Scale International Boundaries, US Department of State), the same line as on the Esri satellite layer. Includes the enclaves Sokh, Shakhimardan, Chong-Kara and Dzhangail. Built in, works offline.':'Государственная граница Узбекистана по данным LSIB (Large Scale International Boundaries, Госдепартамент США) — та же линия, что на спутниковом слое Esri. Включает анклавы Сох, Шахимардан, Чон-Кара и Джангайл. Встроена в приложение, работает без связи.','updated online':'обновлено онлайн','built-in':'встроенная','Detailed state border from OpenStreetMap (accuracy about tens of metres), including the enclaves. Neighbouring state borders are shown with a thinner line. When online, the border is refreshed every 30 days and accepted only after a consistency check.':'Подробная государственная граница по данным OpenStreetMap (точность порядка десятков метров), включая анклавы. Границы соседних государств показаны тонкой линией. При наличии связи граница обновляется раз в 30 дней и принимается только после проверки.','Mark position':'Отметить место','Nearest aerodromes':'Ближайшие аэродромы','No elevation in source':'В источнике нет превышения','OUTSIDE':'ВНЕ',
 'Position marked: {n}':'Место отмечено: {n}','Possible duplicate of {n}':'Возможный дубликат {n}','Precise border loaded: {n} km of boundary.':'Точная граница загружена: {n} км.','RWY {d}: length {a} m, by thresholds {b} m (displaced thresholds or data error)':'ВПП {d}: длина {a} м, по порогам {b} м (смещённые пороги или ошибка данных)',
 'RWY {d}: no course data':'ВПП {d}: нет данных о курсе','RWY {d}: true course {c}° does not match the designator':'ВПП {d}: истинный курс {c}° не соответствует номеру','Reserve ({u})':'Резерв ({u})','Reset':'Сброс','Set fuel':'Ввести остаток','Source':'Источник','Start':'Пуск','State border':'Государственная граница','Stop':'Стоп','Stopwatch':'Секундомер',
 'Sun':'Солнце','Sunrise':'Восход','Sunset':'Заход','To border':'До границы','h':'ч','to {b}':'до {b}'
