@@ -4758,6 +4758,43 @@ Object.assign(RU,{'All':'Все','My points':'Мои точки','Reporting poin
   'Flightradar24: fr24api.flightradar24.com (paid subscription). ADS-B Exchange: RapidAPI “ADSBexchange.com” plan. FlyItalyADSB: free key by e-mail at flyitalyadsb.com. OpenSky: API client in your account settings (4000 requests a day). Own receiver: any readsb, dump1090-fa or tar1090 station.':'Flightradar24: fr24api.flightradar24.com (платная подписка). ADS-B Exchange: тариф «ADSBexchange.com» на RapidAPI. FlyItalyADSB: бесплатный ключ по e-mail на flyitalyadsb.com. OpenSky: API-клиент в настройках учётной записи (4000 запросов в сутки). Собственный приёмник: любая станция readsb, dump1090-fa или tar1090.',
   'For awareness only — not for separation. Not a substitute for ATC information or TCAS.':'Только для информации — не для эшелонирования. Не заменяет информацию УВД и TCAS.'});
 
+/* ---------- aeronautical data check: does each airspace named after a city actually lie at that city? ---------- */
+const ASP_CITY=[['TASHKENT','TOSHKENT','ТАШКЕНТ'],['SAMARKAND','SAMARQAND','САМАРКАНД'],['KARSHI','QARSHI','КАРШИ'],['BUKHARA','BUXORO','БУХАРА'],['NAVOI','NAVOIY','НАВОИ'],['TERMEZ','TERMIZ','ТЕРМЕЗ'],
+  ['NUKUS','НУКУС'],['URGENCH','URGANCH','УРГЕНЧ'],['FERGANA','FARGONA','FERGHANA','ФЕРГАНА'],['ANDIZHAN','ANDIJAN','ANDIJON','АНДИЖАН'],['NAMANGAN','НАМАНГАН'],['KOKAND','QOQON','КОКАНД'],
+  ['ZARAFSHAN','ZARAFSHON','ЗАРАФШАН'],['KHANABAD','XONOBOD','XONABOD','ХАНАБАД'],['CHIRCHIK','CHIRCHIQ','ЧИРЧИК'],['JIZZAKH','JIZZAX','DZHIZAK','ДЖИЗАК'],['SHAHRISABZ','SHAKHRISABZ','ШАХРИСАБЗ'],
+  ['MUYNAK','MOYNAQ','МУЙНАК'],['DUSHANBE','ДУШАНБЕ'],['KHUJAND','KHUDZHAND','ХУДЖАНД'],['BISHKEK','БИШКЕК'],['ASHGABAT','ASHKHABAD','АШХАБАД'],['TURKMENABAT','ТУРКМЕНАБАД'],['SHYMKENT','CHIMKENT','ШЫМКЕНТ']];
+const cityKeyOf=s=>{ const U=' '+String(s||'').toUpperCase().replace(/[^A-ZА-ЯЁ]+/g,' ')+' '; return ASP_CITY.filter(g=>g.some(n=>U.includes(' '+n+' '))).map(g=>g[0]); };
+function cityPts(){ const m={}; ASP_CITY.forEach(g=>m[g[0]]=[]);
+  LIB.ads.filter(a=>a.type==='AD'&&isFinite(a.lat)).forEach(a=>{ cityKeyOf([a.city,a.full,a.name].join(' ')).forEach(k=>m[k].push([a.lat,a.lon])); });
+  (AERO.apt||[]).forEach(a=>{ if(!isFinite(a.lat)) return; cityKeyOf(a.name).forEach(k=>m[k].push([a.lat,a.lon])); }); return m; }
+function aspHas(a,p){ const q={lat:p[0],lon:p[1]}; if(p[0]<a.bb[0]-.1||p[0]>a.bb[2]+.1||p[1]<a.bb[1]-.13||p[1]>a.bb[3]+.13) return false;
+  if(a.rings.some(r=>inPoly(q,r))) return true; let d=Infinity; a.rings.forEach(r=>{ for(let i=0,j=r.length-1;i<r.length;j=i++) d=Math.min(d,segDist(q,r[j],r[i])); }); return d<5000; }
+const ASP_SKIP=new Set(['FIR','UIR','AWY']);
+function aspCheck(){ const P=cityPts(), res={fixed:[],warn:[],ok:0,date:Date.now()}, bad=[];
+  AERO.asp.forEach(a=>{ delete a.chk; if(a.name0){ a.name=a.name0; delete a.name0; } });
+  AERO.asp.forEach(a=>{ if(ASP_SKIP.has(a.t)) return; const ks=cityKeyOf(a.name); if(ks.length!==1) return; const k=ks[0], pts=P[k]; if(!pts||!pts.length) return;
+    if(pts.some(p=>aspHas(a,p))){ res.ok++; return; }
+    const other=Object.keys(P).filter(x=>x!==k&&P[x].some(p=>aspHas(a,p))); bad.push({a,k,other}); });
+  /* two airspaces of the same kind whose names are exchanged: put each name where its city is */
+  const used=new Set();
+  bad.forEach(x=>{ if(used.has(x)) return; const y=bad.find(z=>z!==x&&!used.has(z)&&z.a.t===x.a.t&&x.other.includes(z.k)&&z.other.includes(x.k)); if(!y) return; used.add(x); used.add(y);
+    const ren=(o,from,to)=>{ const g=ASP_CITY.find(c=>c[0]===from), G=ASP_CITY.find(c=>c[0]===to); let n=o.a.name; g.forEach(al=>{ n=n.replace(new RegExp('(^|[^A-ZА-ЯЁ])'+al+'(?=[^A-ZА-ЯЁ]|$)','i'),(m,p1)=>p1+(/[А-Я]/.test(al)?G[2]||G[0]:G[0])); }); return n; };
+    const nx=ren(x,x.k,y.k), ny=ren(y,y.k,x.k); x.a.name0=x.a.name; y.a.name0=y.a.name; x.a.name=nx; y.a.name=ny; x.a.chk='fix'; y.a.chk='fix'; x.a._lp=null; y.a._lp=null;
+    res.fixed.push({was:x.a.name0,now:nx,t:x.a.t},{was:y.a.name0,now:ny,t:y.a.t}); });
+  bad.filter(x=>!used.has(x)).forEach(x=>{ x.a.chk='warn'; res.warn.push({name:x.a.name,t:x.a.t,k:x.k,other:x.other}); });
+  AERO.chk=res; return res; }
+{ const _al=aeroLoad; aeroLoad=async function(){ await _al(); if(AERO.asp&&AERO.asp.length){ aspCheck(); aeroDraw(); } }; }
+{ let n=0; const iv=setInterval(()=>{ if(AERO.asp&&AERO.asp.length&&!AERO.chk){ aspCheck(); aeroDraw(); clearInterval(iv); } if(++n>60) clearInterval(iv); },1000); }
+{ const _ar=aspRow; aspRow=function(a){ let h=_ar(a); if(a.chk==='fix') h=h.replace('</small>',` · <span class="st-ok">${t('name corrected (data had “{n}”)',{n:esc(a.name0)})}</span></small>`);
+    else if(a.chk==='warn') h=h.replace('</small>',` · <span class="st-warn">${t('name does not match the location — check with AIP')}</span></small>`); return h; }; }
+{ const _st=aeroStatTxt; aeroStatTxt=function(){ let h=_st(); const c=AERO.chk; if(!c||AERO.busy) return h;
+    h+=`<br><b>${t('Data check')}:</b> ${t('{o} airspaces match their aerodrome, {f} names corrected, {w} need checking',{o:c.ok,f:c.fixed.length,w:c.warn.length})}`;
+    if(c.fixed.length) h+='<br>'+c.fixed.map(x=>`✓ ${esc(x.was)} → <b>${esc(x.now)}</b>`).join('<br>');
+    if(c.warn.length) h+='<br>'+c.warn.slice(0,12).map(x=>`⚠ <b>${esc(x.name)}</b> (${esc(x.t)}) — ${x.other.length?t('lies at {c}',{c:x.other.join(', ')}):t('not at {c}',{c:x.k})}`).join('<br>');
+    return h; }; }
+Object.assign(RU,{'name corrected (data had “{n}”)':'название исправлено (в данных было «{n}»)','name does not match the location — check with AIP':'название не совпадает с местом — сверьте с AIP',
+  'Data check':'Проверка данных','{o} airspaces match their aerodrome, {f} names corrected, {w} need checking':'совпадают с аэродромом: {o}; исправлено названий: {f}; требуют проверки: {w}','lies at {c}':'находится у {c}','not at {c}':'не у {c}'});
+
 /* ================= boot ================= */
 (()=>{ let seed=null; try{ const tx=$('#fmn-seed').textContent.trim(); if(tx) seed=JSON.parse(tx); }catch(e){}
   const fresh=!lsGet('fmn.mission.v1');
