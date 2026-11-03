@@ -74,6 +74,7 @@ jobs:
       - name: GPS permission and screen always on
         run: |
           M=android/app/src/main/AndroidManifest.xml
+          grep -q usesCleartextTraffic "$M" || sed -i 's#<application\b#<application android:usesCleartextTraffic="true"#' "$M"
           sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' "$M"
           MA=$(find android/app/src/main/java -name MainActivity.java | head -n1)
           PKG=$(sed -n 's/^package \(.*\);/\1/p' "$MA")
