@@ -687,6 +687,7 @@ h3,.lm-h{font:600 11.5px/1.2 var(--f-body)!important;letter-spacing:.06em!import
 .rte-case{stroke:#000!important;stroke-opacity:.55!important}
 .rte,.rte.active{stroke:#D000C8!important}
 .rte-leg{stroke:#FF00FF!important}
+.rte-past{stroke:#8a94a6!important;stroke-opacity:.85!important}
 body.navact .rte{stroke:#ffffff!important}
 .leg-ofp{text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff}
 .leg-ofp .c{color:#A0008F}.leg-ofp .t{color:#24303d}
@@ -1674,11 +1675,13 @@ function renderMap(){
   renderLib();
 }
 /* the leg being flown is drawn magenta over the blue route */
-let legLine=null, legKey='';
+let legLine=null, legKey='', legPast=null;
+/* ForeFlight-style leg states: flown legs dimmed grey, current leg magenta, future legs keep the route colour */
 function updLegLine(){ const r=Rt(FLY.routeId), pts=routePts(r), on=r&&!FLY.direct&&(FLY.gps||FLY.sim)&&FLY.leg>0&&FLY.leg<pts.length;
   const k=on?`${r.id}:${FLY.leg}:${pts[FLY.leg-1].lat},${pts[FLY.leg].lat}`:''; if(k===legKey) return; legKey=k;
-  if(legLine){ legLine.remove(); legLine=null; } if(!on) return;
-  legLine=L.polyline(densify(pts[FLY.leg-1],pts[FLY.leg]),{className:'rte-leg',weight:4,interactive:false}).addTo(map); }
+  if(legLine){ legLine.remove(); legLine=null; } if(legPast){ legPast.remove(); legPast=null; } if(!on) return;
+  legLine=L.polyline(densify(pts[FLY.leg-1],pts[FLY.leg]),{className:'rte-leg',weight:4,interactive:false}).addTo(map);
+  legPast=L.layerGroup(); for(let i=0;i<FLY.leg-1;i++) legPast.addLayer(L.polyline(densify(pts[i],pts[i+1]),{className:'rte-past',weight:4,interactive:false})); legPast.addTo(map); }
 function invalidateRoutes(pid){ MS.routes.forEach(r=>{ if(r.wpts.includes(pid)) r.profile=null; }); }
 function bandTxt(z){ if(z.loTxt||z.hiTxt) return `${z.loTxt||'—'} – ${z.hiTxt||'—'}`; const f=v=>v==null?'—':(v<=0?(CFG.lang==='ru'?'ЗЕМЛЯ':'SFC'):fmtAlt(v)); return `${f(z.lower)} – ${f(z.upper)}`; }
 function nearestNav(lat,lon,excl){ let best=null; const scan=p=>{ if(!isNav(p)||p.id===excl)return; const d=inverse(p.lat,p.lon,lat,lon); if(!best||d.dist<best.d.dist) best={p,d}; }; MS.points.forEach(scan); LIB.points.forEach(scan); return best; }
