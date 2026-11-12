@@ -4193,11 +4193,11 @@ async function aeroDownload(){ if(AERO.busy) return; if(!navigator.onLine) retur
       try{ const j=await aeroGet(`https://s3.openaip.net/openaip-system-exports/${cc}_${l}.geojson`); if(j){ const r=normFC(j,'openaip'); AERO_L.forEach(x=>part[x]=part[x].concat(r[x])); got=true; } }catch(e){ errs.push(`${cc}_${l}: ${e.message||e}`); } }
     if(got){ await ADB.put('oaip:'+cc,part); keys.push('oaip:'+cc); } }
   AERO.busy=false; AERO.prog='';
-  if(!keys.length){ AERO.err=t('openAIP could not be reached')+(errs[0]?': '+errs[0]:''); toast(AERO.err,true); aeroMenuStat(); return; }
+  if(!keys.length){ AERO.err=t('openAIP could not be reached')+(errs[0]?': '+errs[0]:'')+(IS_NATIVE?'':'. '+t('In the web version, download the openAIP OpenAir/GeoJSON file on a computer and use "Import file".')); toast(AERO.err,true); aeroMenuStat(); return; }
   AERO.meta={date:new Date().toISOString().slice(0,10),keys:keys.concat(old),errs:errs.slice(0,5)}; await ADB.put('meta',AERO.meta); await aeroLoad();
   toast(t('Aeronautical data updated: {a} airspaces, {n} navaids, {r} reporting points, {o} obstacles',{a:AERO.asp.length,n:AERO.nav.length,r:AERO.rpp.length,o:AERO.obs.length})); aeroMenuStat(); }
-function aeroImport(){ const f=document.createElement('input'); f.type='file'; f.accept='.geojson,.json,.txt,.air,.openair,application/json,text/plain'; f.onchange=async()=>{ const file=f.files[0]; if(!file) return;
-  try{ const txt=await file.text(); let part; if(/^\s*[\[{]/.test(txt)) part=normFC(JSON.parse(txt),'file'); else part={asp:parseOpenAir(txt),nav:[],rpp:[],obs:[],apt:[]};
+function aeroImport(){ const f=document.createElement('input'); f.type='file'; f.accept='*/*'; f.style.display='none'; document.body.appendChild(f); f.onchange=async()=>{ f.remove(); const file=f.files[0]; if(!file) return;
+  try{ const txt=(await file.text()).replace(/^\uFEFF/,''); let part; if(/^\s*[\[{]/.test(txt)) part=normFC(JSON.parse(txt),'file'); else part={asp:parseOpenAir(txt),nav:[],rpp:[],obs:[],apt:[]};
     const cnt=AERO_L.reduce((s,l)=>s+part[l].length,0); if(!cnt) return toast(t('Nothing recognised in this file.'),true);
     const k='file:'+file.name; await ADB.put(k,part); const m=AERO.meta||{date:new Date().toISOString().slice(0,10),keys:[]}; if(!m.keys.includes(k)) m.keys.push(k); AERO.meta=m; await ADB.put('meta',m); await aeroLoad();
     toast(t('Imported {n} objects from {f}',{n:cnt,f:file.name})); aeroMenuStat(); }catch(e){ toast(String(e.message||e),true); } }; f.click(); }
