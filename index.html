@@ -618,10 +618,12 @@ body{font-family:var(--f-display)}
 pre.fpl{font:13px/1.4 var(--f-data);white-space:pre-wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:10px;margin:6px 0}
 #acDet summary{list-style:none;display:inline-flex;margin:6px 0} #acDet textarea{width:100%;font:13px var(--f-data)}
 
-.awy-l{background:none;border:0;white-space:nowrap;transform:translate(-50%,-50%);font:700 10px/1 var(--f-data);color:#2F6FD6;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff}
-.asp-l{background:none;border:0;white-space:nowrap;transform:translate(-50%,-50%);text-align:center;font:700 11px/1.15 var(--f-data);text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff}
+.awy-l{background:#fff;border:1px solid #0B3FCC;white-space:nowrap;transform:translate(-50%,-50%);padding:0 3px;font:700 9.5px/1.35 var(--f-data);color:#0B3FCC;letter-spacing:.03em}
+.asp-l{background:none;border:0;white-space:nowrap;transform:translate(-50%,-50%);text-align:center;font:700 10.5px/1.15 var(--f-data);text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;letter-spacing:.04em}
+.asp-l .lim{display:inline-block;font-style:normal;margin-top:1px;min-width:44px} .asp-l .lim span{display:block;font-size:10px;line-height:1.2;padding:0 2px} .asp-l .lim span+span{border-top:1px solid currentColor}
 .asp-l b{display:block;font-size:11.5px} .asp-l i{font-style:normal;font-weight:600;font-size:10.5px}
-.asp-b{color:#1F4FD1} .asp-r{color:#C21810} .asp-f{color:#2d3f9e;font-size:13px;letter-spacing:.06em}
+.asp-b{color:#0B3FCC} .asp-r{color:#D7201A} .asp-f{color:#1B2A6B;font-size:12px;letter-spacing:.08em}
+.chart-leg{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;font:500 11px/1.25 var(--f-body);margin:8px 0} .chart-leg div{display:flex;align-items:center;gap:6px} .chart-leg svg{flex:0 0 42px;height:12px}
 .grid-l{background:none;border:0;white-space:nowrap;font:800 30px/1 var(--f-display);color:rgba(60,74,92,.38);transform:translate(8px,-34px)} .grid-l.v{transform:translate(6px,-15px) rotate(-90deg);transform-origin:0 0}
 .mef{background:none;border:0;white-space:nowrap;transform:translate(-50%,-50%);font:800 40px/1 var(--f-display);color:rgba(80,96,118,.55);letter-spacing:-.02em}
 .mef sup{font-size:.55em;vertical-align:.75em} .mef.sm{font-size:28px} .mef.hi{color:rgba(214,86,60,.62)}
@@ -4203,16 +4205,17 @@ function aeroImport(){ const f=document.createElement('input'); f.type='file'; f
 const aeroCanvas=L.canvas({pane:'aeroAsp',padding:.4});
 const gAeroA=L.layerGroup().addTo(map), gAeroL=L.layerGroup().addTo(map), gAeroP=L.layerGroup().addTo(map), gGrid=L.layerGroup().addTo(map);
 let aeroLbl=null; function aeroLabels(on){ if(on&&!aeroLbl){ aeroLbl=new CachedLayer(OVL.lbl.url,{key:'ovl-lbl',maxZoom:20,maxNativeZoom:OVL.lbl.max,opacity:1,className:'ovl-lbl',zIndex:3}).addTo(map); } if(!on&&aeroLbl){ map.removeLayer(aeroLbl); aeroLbl=null; } }
-function aspStyle(a){ const t_=a.t; const B='#1F4FD1', R='#E0201B';
-  if(t_==='FIR'||t_==='UIR'||t_==='ACC'||t_==='FIS') return {color:'#2d3f9e',weight:3.2,opacity:.8,fill:false,interactive:false};
-  if(t_==='CTA'||t_==='TMA'||t_==='UTA'||t_==='LTA'||t_==='TIA'||t_==='TIZ') return {color:B,weight:2,opacity:.9,fillColor:B,fillOpacity:.04};
-  if(t_==='CTR'||t_==='MCTR'||t_==='ATZ'||t_==='MATZ'||t_==='HTZ') return {color:B,weight:2.2,dashArray:'8 5',fillColor:B,fillOpacity:.08};
-  if(t_==='P') return {color:R,weight:2.8,fillColor:R,fillOpacity:.18};
-  if(t_==='D') return {color:R,weight:2.2,dashArray:'7 4',fillColor:R,fillOpacity:.06};
-  if(SUA.has(t_)) return {color:R,weight:2.4,fillColor:R,fillOpacity:.08};
-  if(t_==='AWY') return {color:'#5b6d86',weight:1.2,opacity:.55,fillOpacity:.02};
-  if(t_==='ADIZ') return {color:'#7a3fb0',weight:2.4,dashArray:'10 4 2 4',fill:false,interactive:false};
-  return {color:'#7a3fb0',weight:1.6,fillColor:'#7a3fb0',fillOpacity:.04}; }
+function aspStyle(a){ const t_=a.t; const BL='#0B3FCC', RD='#D7201A', PU='#6B2FA3', NV='#1B2A6B';
+  if(t_==='FIR'||t_==='UIR'||t_==='ACC'||t_==='FIS') return {color:NV,weight:1.6,opacity:.9,dashArray:'12 4 2 4',fill:false,interactive:false};
+  if(t_==='CTA'||t_==='TMA'||t_==='UTA'||t_==='LTA'||t_==='TIA'||t_==='TIZ') return {color:BL,weight:2.2,opacity:1,fillColor:BL,fillOpacity:.03};
+  if(t_==='CTR'||t_==='MCTR') return {color:BL,weight:2,opacity:1,dashArray:'7 4',fillColor:BL,fillOpacity:.06};
+  if(t_==='ATZ'||t_==='MATZ'||t_==='HTZ') return {color:BL,weight:1.6,opacity:1,dashArray:'2 3',fillColor:BL,fillOpacity:.04};
+  if(t_==='P') return {color:RD,weight:3,opacity:1,fillColor:RD,fillOpacity:.14};
+  if(t_==='D') return {color:RD,weight:2,opacity:1,dashArray:'8 4',fillColor:RD,fillOpacity:.05};
+  if(SUA.has(t_)) return {color:RD,weight:2,opacity:1,fillColor:RD,fillOpacity:.09};
+  if(t_==='AWY') return {color:BL,weight:1.4,opacity:.8,fill:false};
+  if(t_==='ADIZ') return {color:PU,weight:2,dashArray:'10 4 2 4',fill:false,interactive:false};
+  return {color:PU,weight:1.6,fillColor:PU,fillOpacity:.04}; }
 const bbHit=(bb,b)=>!(bb[2]<b.getSouth()||bb[0]>b.getNorth()||bb[3]<b.getWest()||bb[1]>b.getEast());
 function aspAt(lat,lon){ return AERO.asp.filter(a=>lat>=a.bb[0]&&lat<=a.bb[2]&&lon>=a.bb[1]&&lon<=a.bb[3]&&a.rings.some(r=>inPoly({lat,lon},r))).sort((x,y)=>(limM(x.lo)||0)-(limM(y.lo)||0)); }
 function aspRow(a){ const m=l=>'';
@@ -4238,7 +4241,7 @@ function aeroDraw(){ gAwy.clearLayers(); gAeroA.clearLayers(); gAeroL.clearLayer
       const lyr=L.polygon(a.rings,st); if(st.interactive!==false) lyr.on('click',e=>{ if(MODE) return handleModeClick(e.latlng,null); if(popOpen()){ map.closePopup(); return; } aeroPop(e.latlng); }); gAeroA.addLayer(lyr); shown.push(a); });
     if(C.lbl&&z>=7){ let n=0; shown.sort((x,y)=>(SUA.has(y.t)?1:0)-(SUA.has(x.t)?1:0)).forEach(a=>{ if(n>90||a.t==='AWY') return; const p1=map.latLngToContainerPoint([a.bb[0],a.bb[1]]), p2=map.latLngToContainerPoint([a.bb[2],a.bb[3]]), w=Math.abs(p2.x-p1.x), h=Math.abs(p2.y-p1.y);
         const big=a.t==='FIR'||a.t==='UIR'||a.t==='ACC'||a.t==='FIS'; if(w<46||h<30||(big&&z>8)) return; let c=aspLabelPt(a); if(!map.getBounds().contains(c)) return; n++;
-        const k=SUA.has(a.t)?'r':big?'f':'b'; gAeroL.addLayer(L.marker(c,{pane:'aeroLbl',interactive:false,icon:L.divIcon({className:'asp-l asp-'+k,iconSize:null,html:`<b>${esc(a.name)}</b>${big?'':`<i>${a.cls?a.cls+' · ':''}${esc(limTxt(a.hi))}<br>${esc(limTxt(a.lo))}</i>`}`})})); }); } }
+        const k=SUA.has(a.t)?'r':big?'f':'b'; gAeroL.addLayer(L.marker(c,{pane:'aeroLbl',interactive:false,icon:L.divIcon({className:'asp-l asp-'+k,iconSize:null,html:`<b>${esc(a.name.toUpperCase())}</b>${big?'':`<i class="lim"><span>${esc(limTxt(a.hi))}</span><span>${esc(limTxt(a.lo))}</span></i>`}`})})); }); } }
   if(C.nav&&z>=7) AERO.nav.forEach(n=>{ if(!b.contains([n.lat,n.lon])||dupNear(n.lat,n.lon,n.id,6)) return; const k=SYM[n.k]?n.k:'VOR';
     const m=L.marker([n.lat,n.lon],{icon:L.divIcon({className:'aero-nav',html:`<svg viewBox="-13 -13 26 26" width="26" height="26">${SYM[k]}</svg>${z>=8?`<span class="navbox">${esc(n.id)} ${esc(n.f)}</span>`:''}`,iconSize:[26,26],iconAnchor:[13,13]}),bubblingMouseEvents:false});
     m.on('click',()=>L.popup().setLatLng([n.lat,n.lon]).setContent(`<div class="pop"><h4>${esc(n.id)} · ${esc(n.name)}</h4><dl class="kv"><dt>${t('Type')}</dt><dd>${esc(n.k)}</dd><dt>${t('Frequency')}</dt><dd>${esc(n.f)}${n.ch?' · CH '+esc(n.ch):''}</dd>${n.elev!=null?`<dt>${t('Elevation')}</dt><dd>${fmtElev(n.elev)}</dd>`:''}<dt>${CFG.coord}</dt><dd>${fmtLL(n.lat,n.lon)}</dd></dl><p class="note">openAIP</p></div>`).openOn(map)); gAeroP.addLayer(m); });
@@ -4280,6 +4283,7 @@ setInterval(()=>{ const p=FLY.pos; if(!p||aeroCfg().warn===false||!AERO.asp.leng
 /* --- layer menu: aeronautical data block --- */
 function aeroMenuHtml(){ const C=aeroCfg(), m=AERO.meta, ck=(k,l)=>`<label class="lchip"><input type="checkbox" data-on="aeroT" data-k="${k}" ${C[k]!==false?'checked':''}>${t(l)}</label>`;
   return `<div class="lm-h">${t('Aeronautical data')}</div><div class="lchips">${ck('asp','Airspace (FIR, CTA, TMA, CTR)')}${ck('lbl','Airspace names and limits')}${ck('mef','Max elevation figures (MEF)')}${ck('grid','Lat/long grid')}${ck('awy','Airways (Uzbekistan area)')}${ck('nav','Navaids')}${ck('apt','Airports & heliports')}${ck('obs','Obstacles')}${ck('warn','Warn on entering R / P / D areas')}${ck('all','Show on every map type')}</div>
+  <div class="lm-h">${t('Chart legend')}</div><div class="chart-leg">${legRow('FIR / UIR','#1B2A6B',1.6,'12 4 2 4')}${legRow('Control zone (CTR)','#0B3FCC',2,'7 4')}${legRow('TMA / CTA','#0B3FCC',2.2)}${legRow('ATZ / MATZ','#0B3FCC',1.6,'2 3')}${legRow('Restricted (R)','#D7201A',2)}${legRow('Danger (D)','#D7201A',2,'8 4')}${legRow('Prohibited (P)','#D7201A',3)}${legRow('Airway, lower','#0B3FCC',1.5)}${legRow('Airway, upper','#0B3FCC',2.6)}<div><span class="awy-l" style="position:static;transform:none">UL123</span> ${t('Airway ID')}</div></div>
   <p class="note" id="aeroStat">${aeroStatTxt()}</p><div class="actions"><button class="btn sm" data-act="aeroDl">${m?t('Update data (openAIP)'):t('Download data (openAIP)')}</button><button class="btn sm" data-act="aeroImp">${t('Import file (GeoJSON, OpenAir)')}</button></div>`; }
 function aeroStatTxt(){ if(AERO.busy) return t('Downloading… {p}',{p:AERO.prog}); if(AERO.err) return esc(AERO.err); const m=AERO.meta; if(!m) return t('No aeronautical data yet — tap Download (internet needed once, then works offline).');
   return t('Data of {d}: {a} airspaces, {n} navaids, {r} reporting points, {o} obstacles, {p} airports',{d:m.date,a:AERO.asp.length,n:AERO.nav.length,r:AERO.rpp.length,o:AERO.obs.length,p:AERO.apt.length}); }
@@ -4805,12 +4809,14 @@ function awyHtml(s){ const fl=x=>x===0?'SFC':'FL'+String(x).padStart(3,'0'); con
   return `<div class="pop"><h4>${esc(s.n)}</h4><dl class="kv"><dt>${t('Segment')}</dt><dd>${esc(s.f1)} – ${esc(s.f2)}</dd><dt>${t('Levels')}</dt><dd>${fl(s.lo)} – ${fl(s.hi)}</dd><dt>${t('Direction')}</dt><dd>${t(dir)}</dd><dt>${t('Network')}</dt><dd>${s.l===2?t('High (upper airway)'):t('Low (lower airway)')}</dd></dl><p class="note">AIRAC 2611 · Navigraph</p></div>`; }
 function drawAwy(b,z){ const placed=[];
   AWY.forEach(s=>{ if(!bbHit(s.bb,b)) return; const hi=s.l===2;
-    const ln=L.polyline([s.a,s.b],{color:'#2F6FD6',weight:hi?2.4:1.6,opacity:.9,dashArray:hi?null:'6 4',bubblingMouseEvents:false});
+    const ln=L.polyline([s.a,s.b],{color:'#0B3FCC',weight:hi?2.6:1.5,opacity:.95,bubblingMouseEvents:false});
     ln.on('click',e=>{ if(MODE) return handleModeClick(e.latlng,null); L.popup({maxWidth:260}).setLatLng(e.latlng).setContent(awyHtml(s)).openOn(map); });
     gAwy.addLayer(ln);
     if(z>=8){ const c=map.latLngToContainerPoint([(s.a[0]+s.b[0])/2,(s.a[1]+s.b[1])/2]); if(placed.some(p=>p.n===s.n&&Math.hypot(p.x-c.x,p.y-c.y)<90)) return; placed.push({n:s.n,x:c.x,y:c.y});
       gAwy.addLayer(L.marker(map.containerPointToLatLng(c),{interactive:false,pane:'aeroLbl',icon:L.divIcon({className:'awy-l',iconSize:null,html:`<b>${esc(s.n)}</b>`})})); }
   }); }
+function legRow(name,c,w,d){ return `<div><svg viewBox="0 0 42 12"><line x1="1" y1="6" x2="41" y2="6" stroke="${c}" stroke-width="${w}"${d?` stroke-dasharray="${d}"`:''}/></svg>${t(name)}</div>`; }
+Object.assign(RU,{'Chart legend':'Условные обозначения','Control zone (CTR)':'Зона УВД (CTR)','TMA / CTA':'ТМА / ОВД','Restricted (R)':'Ограниченная зона (R)','Danger (D)':'Опасная зона (D)','Prohibited (P)':'Запретная зона (P)','Airway, lower':'Нижняя трасса','Airway, upper':'Верхняя трасса','Airway ID':'Обозначение трассы'});
 /* ================= boot ================= */
 (()=>{ let seed=null; try{ const tx=$('#fmn-seed').textContent.trim(); if(tx) seed=JSON.parse(tx); }catch(e){}
   const fresh=!lsGet('fmn.mission.v1');
