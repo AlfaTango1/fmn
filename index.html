@@ -627,10 +627,11 @@ pre.fpl{font:13px/1.4 var(--f-data);white-space:pre-wrap;background:var(--surfac
 .grid-l{background:none;border:0;white-space:nowrap;font:800 30px/1 var(--f-display);color:rgba(60,74,92,.38);transform:translate(8px,-34px)} .grid-l.v{transform:translate(6px,-15px) rotate(-90deg);transform-origin:0 0}
 .mef{background:none;border:0;white-space:nowrap;transform:translate(-50%,-50%);font:800 40px/1 var(--f-display);color:rgba(80,96,118,.55);letter-spacing:-.02em}
 .mef sup{font-size:.55em;vertical-align:.75em} .mef.sm{font-size:28px} .mef.hi{color:rgba(214,86,60,.62)}
-.aero-nav,.aero-rp,.aero-obs,.aero-ad{background:none;border:0} .aero-nav{color:#1F4FD1} .aero-obs{color:#8a2c12}
-.aero-nav .navbox{position:absolute;left:24px;top:2px;white-space:nowrap;font:700 11px var(--f-data);background:#fff;color:#1F4FD1;border:1.5px solid #1F4FD1;padding:1px 4px}
+.aero-nav,.aero-rp,.aero-obs,.aero-ad{background:none;border:0} .aero-nav{color:#0B3FCC} .aero-obs{color:#8a2c12}
+.aero-nav .navbox{position:absolute;left:20px;top:-4px;white-space:nowrap;font:700 10.5px/1.15 var(--f-data);background:none;border:0;padding:0;color:#0B3FCC;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;align-items:flex-start}
+.aero-nav .navbox i{font-style:normal;font-weight:600;font-size:10px}
 .aero-rp span,.aero-ad span,.aero-obs span{position:absolute;left:21px;top:2px;white-space:nowrap;font:700 11.5px var(--f-data);color:#111;text-shadow:0 0 3px #fff,0 0 3px #fff}
-.aero-ad span{color:#1F4FD1} .aero-obs span{left:16px;top:-2px;font-size:10.5px;color:#8a2c12}
+.aero-ad span{color:#0B3FCC;font-weight:700} .aero-obs span{left:16px;top:-2px;font-size:10.5px;color:#8a2c12}
 .asp-h{margin:10px 0 4px} table.asp-t{border-collapse:collapse;width:100%;font-size:12.5px} .asp-t td{border-top:1px solid var(--line);padding:4px 3px;vertical-align:top} .asp-t td.mono{text-align:right;white-space:nowrap;font-family:var(--f-data)}
 .asp-sw{display:inline-block;width:10px;height:10px;margin-right:5px;border:2px solid #1F4FD1;vertical-align:-1px} .asp-sw.a-r{border-color:#E0201B;background:rgba(224,32,27,.2)} .asp-sw.a-f{border-color:#2d3f9e;border-width:3px} .asp-sw.a-w{border-color:#5b6d86}
 .aero-menu .lchips{display:flex;flex-wrap:wrap;gap:4px} .aero-menu .note{margin:6px 0} .aero-menu .actions{margin-bottom:6px}
@@ -1561,8 +1562,8 @@ const SYM=(()=>{
     RMPT:'<polygon points="0,-9.9 2.2,-2.2 9.9,0 2.2,2.2 0,9.9 -2.2,2.2 -9.9,0 -2.2,-2.2" fill="#000" stroke="#fff" stroke-width="1" stroke-linejoin="round"/>',
     MHP:'<circle r="9.4" fill="#fff" stroke="#E0201B" stroke-width="2.2"/><path d="M-4.5 -5.3h2.2v4.3h4.6v-4.3h2.2v10.6h-2.2v-4.4h-4.6v4.4h-2.2z" fill="#E0201B"/>',
     HP:'<circle r="9.4" fill="#fff" stroke="#0070C0" stroke-width="2.2"/><path d="M-4.5 -5.3h2.2v4.3h4.6v-4.3h2.2v10.6h-2.2v-4.4h-4.6v4.4h-2.2z" fill="#0070C0"/>',
-    ADM:'<circle r="7.4" fill="#fff" stroke="#E0201B" stroke-width="4.1"/>',
-    APT:'<circle r="7.4" fill="#fff" stroke="#4472C4" stroke-width="4.1"/>',
+    ADM:'<circle r="7.4" fill="#fff" stroke="#0B3FCC" stroke-width="1.7"/><circle r="2.8" fill="#0B3FCC"/>',
+    APT:'<circle r="7.4" fill="#fff" stroke="#0B3FCC" stroke-width="1.7"/>',
     STL:'<circle r="7.1" fill="#fff" stroke="#000" stroke-width="2.2"/>',
     GEO:'<polygon points="0,-9.4 7.1,0 0,9.4 -7.1,0" fill="#fff" stroke="#000" stroke-width="2" stroke-linejoin="round"/>',
     OBJ:'<rect x="-6.9" y="-6.9" width="13.8" height="13.8" fill="#fff" stroke="#000" stroke-width="2"/>',
@@ -4243,7 +4244,7 @@ function aeroDraw(){ gAwy.clearLayers(); gAeroA.clearLayers(); gAeroL.clearLayer
         const big=a.t==='FIR'||a.t==='UIR'||a.t==='ACC'||a.t==='FIS'; if(w<46||h<30||(big&&z>8)) return; let c=aspLabelPt(a); if(!map.getBounds().contains(c)) return; n++;
         const k=SUA.has(a.t)?'r':big?'f':'b'; gAeroL.addLayer(L.marker(c,{pane:'aeroLbl',interactive:false,icon:L.divIcon({className:'asp-l asp-'+k,iconSize:null,html:`<b>${esc(a.name.toUpperCase())}</b>${big?'':`<i class="lim"><span>${esc(limTxt(a.hi))}</span><span>${esc(limTxt(a.lo))}</span></i>`}`})})); }); } }
   if(C.nav&&z>=7) AERO.nav.forEach(n=>{ if(!b.contains([n.lat,n.lon])||dupNear(n.lat,n.lon,n.id,6)) return; const k=SYM[n.k]?n.k:'VOR';
-    const m=L.marker([n.lat,n.lon],{icon:L.divIcon({className:'aero-nav',html:`<svg viewBox="-13 -13 26 26" width="26" height="26">${SYM[k]}</svg>${z>=8?`<span class="navbox">${esc(n.id)} ${esc(n.f)}</span>`:''}`,iconSize:[26,26],iconAnchor:[13,13]}),bubblingMouseEvents:false});
+    const m=L.marker([n.lat,n.lon],{icon:L.divIcon({className:'aero-nav',html:`<svg viewBox="-13 -13 26 26" width="26" height="26">${SYM[k]}</svg>${z>=8?`<span class="navbox"><b>${esc(n.id)}</b><i>${esc(n.f)}</i></span>`:''}`,iconSize:[26,26],iconAnchor:[13,13]}),bubblingMouseEvents:false});
     m.on('click',()=>L.popup().setLatLng([n.lat,n.lon]).setContent(`<div class="pop"><h4>${esc(n.id)} · ${esc(n.name)}</h4><dl class="kv"><dt>${t('Type')}</dt><dd>${esc(n.k)}</dd><dt>${t('Frequency')}</dt><dd>${esc(n.f)}${n.ch?' · CH '+esc(n.ch):''}</dd>${n.elev!=null?`<dt>${t('Elevation')}</dt><dd>${fmtElev(n.elev)}</dd>`:''}<dt>${CFG.coord}</dt><dd>${fmtLL(n.lat,n.lon)}</dd></dl><p class="note">openAIP</p></div>`).openOn(map)); gAeroP.addLayer(m); });
   if(false) AERO.rpp.forEach(r=>{ if(!b.contains([r.lat,r.lon])||dupNear(r.lat,r.lon,r.name,3)) return; const m=L.marker([r.lat,r.lon],{icon:L.divIcon({className:'aero-rp',html:`<svg viewBox="-10 -10 20 20" width="20" height="20">${r.comp?SYM.RP:SYM.WPT}</svg><span>${esc(r.name)}</span>`,iconSize:[20,20],iconAnchor:[10,10]}),bubblingMouseEvents:false});
     m.on('click',()=>L.popup().setLatLng([r.lat,r.lon]).setContent(`<div class="pop"><h4>${esc(r.name)}</h4><div class="t">${r.comp?t('Compulsory reporting point'):t('Reporting point (on request)')}</div><dl class="kv"><dt>${CFG.coord}</dt><dd>${fmtLL(r.lat,r.lon)}</dd></dl><div class="actions"><button class="btn sm primary" data-act="addHere" data-lat="${r.lat}" data-lon="${r.lon}">${t('Add point here')}</button></div></div>`).openOn(map)); gAeroP.addLayer(m); });
