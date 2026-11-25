@@ -3617,14 +3617,14 @@ function legLblHtml(A,B,crs,dist,dim){ const pa=map.latLngToLayerPoint([A.lat,A.
   const cc=`<b class="c">${flip?'←'+c:c+'→'}</b>`, dd=`<b class="d">${dT}</b>`;
   return `<span class="leg-in${dim?' dim':''}" style="transform:rotate(${rot.toFixed(1)}deg) translate(-50%,-50%)">${flip?cc+dd:dd+cc}</span>`; }
 function drawProc(a,pr){ const fx=pr.fixes.filter(f=>f.lat!=null); if(fx.length<2) return; const gen=PROC_GEN.has(pr.type)||pr.type==='HOLD'||pr.type==='MAPP';
-  const path=gen&&pr.round!==false?procPath(fx,procR(pr)):fx.map(f=>[f.lat,f.lon]);
+  const path=pr.round!==false&&!fx.some(f=>f.arcPart)?procPath(fx,procR(pr)):fx.map(f=>[f.lat,f.lon]);
   gProc.addLayer(L.polyline(path,{className:'proc-case',weight:4.5,interactive:false}));
   gProc.addLayer(L.polyline(path,{className:'proc proc-'+pr.type,weight:2.2,interactive:false}));
   if(map.getZoom()<10) return; const v=dV(adVar(a));
   for(let i=1;i<fx.length;i++){ const A=fx[i-1],B=fx[i]; if(A.lat===B.lat&&A.lon===B.lon||A.arcPart||B.arcPart) continue; const iv=inverse(A.lat,A.lon,B.lat,B.lon), m=interp(A.lat,A.lon,B.lat,B.lon,.5), h=legLblHtml(A,B,n360(iv.az1-v),iv.dist,false);
     if(h) gProc.addLayer(L.marker([m.lat,m.lon],{interactive:false,icon:lblIcon(h)})); }
   const seen=new Set(); fx.forEach(f=>{ if(f.arcPart&&!f.name) return; const k=f.lat.toFixed(5)+f.lon.toFixed(5); if(seen.has(k)) return; seen.add(k);
-    gProc.addLayer(L.marker([f.lat,f.lon],{interactive:false,icon:lblIcon(`<span class="pfx"><i></i><b>${esc(f.name)}</b>${f.src&&/^R\s*\d/i.test(f.src)?`<small>${esc(f.src)}</small>`:''}${f.alt?`<small>${esc(f.alt)}</small>`:''}</span>`)})); });
+    gProc.addLayer(L.marker([f.lat,f.lon],{interactive:false,icon:lblIcon(`${pfxLabel(f)}`)})); });
   const f0=(q=>({lat:q[0],lon:q[1]}))(path[Math.floor(path.length*(gen?0.3:0.5))]); gProc.addLayer(L.marker([f0.lat,f0.lon],{interactive:false,icon:lblIcon(`<span class="ptag">${esc(procName(pr.type))}${pr.name?' '+esc(pr.name):''}</span>`)})); }
 function vProcEdit(d,p,i){ if(!PROC_GEN.has(p.type)) return ''; const g=procGenDefaults(p), ends=rwyEndsLL(d), inp=(k,v,ph)=>`<input class="num" data-on="ade" data-p="procs.${i}.gen.${k}" inputmode="decimal" value="${v==null?'':esc(String(v))}" placeholder="${ph||''}">`;
   const f=(k,l,ph)=>`<label class="f"><span>${t(l)}</span>${inp(k,g[k],ph)}</label>`;
@@ -3716,8 +3716,8 @@ const gPrev=L.layerGroup().addTo(map);
 function chPreview(){ gPrev.clearLayers(); const P=VIEW.pd; if(!(VIEW.tab==='chart'&&VIEW.sub==='pedit'&&P)) return; const a=AD(P.ad); if(!a) return;
   const pr={type:P.d.type,name:P.d.name,spd:num(P.d.spd),bank:num(P.d.bank),round:P.d.round,fixes:parseFixes(P.d._txt||'',a)}; const keep=gProc; 
   const fx=pr.fixes.filter(f=>f.lat!=null); if(fx.length<2) return; const gen=PROC_GEN.has(pr.type)||pr.type==='HOLD'||pr.type==='MAPP';
-  const path=gen&&pr.round!==false?procPath(fx,procR(pr)):fx.map(f=>[f.lat,f.lon]); gPrev.addLayer(L.polyline(path,{className:'proc-prev',weight:3,interactive:false}));
-  fx.forEach(f=>{ if(!f.arcPart) gPrev.addLayer(L.marker([f.lat,f.lon],{interactive:false,icon:lblIcon(`<span class="pfx"><i></i><b>${esc(f.name)}</b>${f.src&&/^R\s*\d/i.test(f.src)?`<small>${esc(f.src)}</small>`:''}${f.alt?`<small>${esc(f.alt)}</small>`:''}</span>`)})); });
+  const path=pr.round!==false&&!fx.some(f=>f.arcPart)?procPath(fx,procR(pr)):fx.map(f=>[f.lat,f.lon]); gPrev.addLayer(L.polyline(path,{className:'proc-prev',weight:3,interactive:false}));
+  fx.forEach(f=>{ if(!f.arcPart) gPrev.addLayer(L.marker([f.lat,f.lon],{interactive:false,icon:lblIcon(`${pfxLabel(f)}`)})); });
   return path; }
 const _renderPanel0=renderPanel; renderPanel=function(){ _renderPanel0(); if(VIEW.tab==='chart'){ const el=$('#panel'), st=el.scrollTop; el.innerHTML=vChart(); el.scrollTop=st; } try{ chPreview(); }catch(e){} };
 Object.assign(ON,{ chartAd:el=>{ VIEW.cad=el.value; renderPanel(); if(CFG.chartOnly) renderLib(); },
@@ -5064,6 +5064,41 @@ function routeRow(r){ const l=routeLegs(r), last=l[l.length-1], pts=routePts(r),
   return h.replace(/<ul class="list" id="catBody">[\s\S]*?<\/ul>/,`<ul class="list" id="catBody">${html}</ul>`); }; }
 { const st=document.createElement('style'); st.textContent=`.hg{margin:16px 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.65}.hg:first-child{margin-top:4px}.grp{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:6px 4px;margin-top:6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--surface,#1c1c1e);color:var(--muted,#9aa);border-bottom:1px solid rgba(255,255,255,.12)}.grp i{font-style:normal;opacity:.7}details.fold{border:1px solid rgba(255,255,255,.12);border-radius:12px;margin:8px 0;background:rgba(255,255,255,.03)}details.fold>summary{list-style:none;cursor:pointer;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px}details.fold>summary::-webkit-details-marker{display:none}details.fold>summary::after{content:'›';font-size:20px;opacity:.6;transition:transform .15s}details.fold[open]>summary::after{transform:rotate(90deg)}details.fold>summary small{margin-left:auto;opacity:.6;font-size:12px}.fold-b{padding:0 14px 14px}.fold-b>h3:first-child{margin-top:0}`; document.head.appendChild(st); }
 Object.assign(RU,{'Plan':'План','Charts and information':'Схемы и информация','Map and data':'Карта и данные','System':'Система','Transfer':'Передача данных','Settings only. Transfer, maps, data and the action log are in the main menu.':'Здесь только настройки. Передача данных, карты, данные и журнал — в главном меню.','Language and units':'Язык и единицы','Display and map':'Экран и карта','Manage':'Управление','Download maps by area':'Загрузка карт по областям','Reference data library':'Справочные данные (библиотека)','Other routes':'Другие маршруты','{n} waypoints':'точек: {n}','{n} legs':'участков: {n}','{n} runways':'ВПП: {n}','{n} navaids':'РНС: {n}','{n} schemes':'схем: {n}','Kazakhstan':'Казахстан','Kyrgyzstan':'Киргизия','Tajikistan':'Таджикистан','Turkmenistan':'Туркмения','Afghanistan':'Афганистан'});
+
+/* ================= turns start over the fix (fly-over) + Jeppesen-style scheme symbols ================= */
+const procPathBy=procPath;
+function procPathOver(fx,R0){ if(fx.length<3||!R0) return fx.map(f=>[f.lat,f.lon]); const RF=typeof R0==='function'?R0:()=>R0; const out=[[fx[0].lat,fx[0].lon]]; let P=[fx[0].lat,fx[0].lon];
+  for(let i=1;i<fx.length;i++){ const N=fx[i]; out.push([N.lat,N.lon]); if(i===fx.length-1) break;
+    const M=fx[i+1], k=Math.cos(N.lat*Math.PI/180), K=111320, xy=(la,lo)=>[(lo-N.lon)*K*k,(la-N.lat)*K], ll=q=>[N.lat+q[1]/K,N.lon+q[0]/(K*k)];
+    const p=xy(P[0],P[1]), m=xy(M.lat,M.lon), lp=Math.hypot(p[0],p[1]); if(lp<1||Math.hypot(m[0],m[1])<1){ P=[N.lat,N.lon]; continue; }
+    const hx=-p[0]/lp, hy=-p[1]/lp, cr=hx*m[1]-hy*m[0], dt=hx*m[0]+hy*m[1], turn=Math.atan2(cr,dt); /* + = left */
+    const R=RF(i); if(!R||Math.abs(turn)<0.035){ P=[N.lat,N.lon]; continue; }
+    const left=turn>0, O=left?[-hy*R,hx*R]:[hy*R,-hx*R], dx=m[0]-O[0], dy=m[1]-O[1], d=Math.hypot(dx,dy);
+    if(d<=R*1.02){ P=[N.lat,N.lon]; continue; }
+    const th=Math.atan2(dy,dx), al=Math.acos(R/d), ph1=left?th-al:th+al, ph0=Math.atan2(-O[1],-O[0]);
+    let da=left?ph1-ph0:ph0-ph1; while(da<0) da+=2*Math.PI; while(da>=2*Math.PI) da-=2*Math.PI; if(!left) da=-da;
+    const n=Math.max(4,Math.ceil(Math.abs(da)/0.1)); let last=null; for(let s=1;s<=n;s++){ const g=ph0+da*s/n; last=[O[0]+R*Math.cos(g),O[1]+R*Math.sin(g)]; out.push(ll(last)); }
+    P=ll(last); }
+  return out; }
+procPath=function(fx,R0){ return (CFG.turnMode==='by')?procPathBy(fx,R0):procPathOver(fx,R0); };
+{ const _c=ON.cfg; ON.cfg=el=>{ _c(el); if(el.dataset.k==='turnMode'){ try{ renderMap(); chPreview(); }catch(e){} } }; }
+{ const _vm=vMore; vMore=function(){ return _vm().replace(/(<label class="f"><span>[^<]*(?:Rounded turns|Плавные)[^<]*<\/span><select data-on="cfg" data-k="rteRound">[\s\S]*?<\/select><\/label>)/,`$1<label class="f"><span>${t('Where a turn starts')}</span><select data-on="cfg" data-k="turnMode"><option value="over"${CFG.turnMode!=='by'?' selected':''}>${t('Over the fix (fly-over)')}</option><option value="by"${CFG.turnMode==='by'?' selected':''}>${t('Before the fix (fly-by)')}</option></select></label>`); }; }
+/* fix symbols and labels as on Jeppesen terminal charts: four-point star = waypoint (in a circle when flown over), Maltese cross = FAF, altitude bars */
+const pfxSvg=(inner)=>`<svg class="pfs" viewBox="-10 -10 20 20">${inner}</svg>`;
+function fixSymHtml(f){ const n=(f.name||'').toUpperCase();
+  if(/^(FAF|FAP)\b/.test(n)) return pfxSvg('<path d="M-7,-7 L0,-2.4 L7,-7 L2.4,0 L7,7 L0,2.4 L-7,7 L-2.4,0Z" fill="#000" stroke="#fff" stroke-width="1"/>');
+  if(/^(MAPT?|MAP\b)/.test(n)) return pfxSvg('<path d="M0,-7 L7,6 L-7,6Z" fill="#000" stroke="#fff" stroke-width="1"/>');
+  if(/^(RWY|ВПП)/.test(n)) return pfxSvg('<rect x="-5" y="-2" width="10" height="4" fill="#000" stroke="#fff" stroke-width="1"/>');
+  return pfxSvg('<circle r="7.6" fill="#fff" fill-opacity=".85" stroke="#000" stroke-width="1.6"/><path d="M0,-6 L1.5,-1.5 L6,0 L1.5,1.5 L0,6 L-1.5,1.5 L-6,0 L-1.5,-1.5Z" fill="#000"/>'); }
+function altBars(s){ s=(s||'').trim(); if(!s) return ''; const m=/^([+≥>]|[-≤<]|=)\s*(.+)$/.exec(s); if(!m) return `<u class="al">${esc(s)}</u>`; const c=m[1]; return `<u class="al ${/[+≥>]/.test(c)?'a':/[-≤<]/.test(c)?'b':'m'}">${esc(m[2])}</u>`; }
+function pfxLabel(f){ return `<span class="pfx">${fixSymHtml(f)}<span class="pl"><b>${esc(f.name)}</b>${f.src&&/^R\s*\d/i.test(f.src)?`<small>${esc(f.src)}</small>`:''}${f.alt?altBars(f.alt):''}</span></span>`; }
+/* arrowheads along each leg, as on approach charts */
+{ const _dp=drawProc; drawProc=function(a,pr){ _dp(a,pr); if(map.getZoom()<10) return; const fx=pr.fixes.filter(f=>f.lat!=null);
+  for(let i=1;i<fx.length;i++){ const A=fx[i-1],B=fx[i]; if(A.arcPart||B.arcPart||(A.lat===B.lat&&A.lon===B.lon)) continue; const pa=map.latLngToLayerPoint([A.lat,A.lon]), pb=map.latLngToLayerPoint([B.lat,B.lon]); if(Math.hypot(pb.x-pa.x,pb.y-pa.y)<80) continue;
+    const ang=Math.atan2(pb.y-pa.y,pb.x-pa.x)*180/Math.PI, q=interp(A.lat,A.lon,B.lat,B.lon,.78);
+    gProc.addLayer(L.marker([q.lat,q.lon],{interactive:false,icon:L.divIcon({className:'proc-arr',iconSize:[0,0],html:`<svg viewBox="-8 -8 16 16" style="transform:rotate(${ang.toFixed(1)}deg)"><path d="M-6,-5 L6,0 L-6,5 L-3,0Z" fill="#000" stroke="#fff" stroke-width="1"/></svg>`})})); } }; }
+{ const st=document.createElement('style'); st.textContent=`.pfx .pfs{position:absolute;left:-10px;top:-10px;width:20px;height:20px;overflow:visible}.pfx i{display:none}.pfx .pl{position:absolute;left:12px;top:-13px;display:flex;flex-direction:column;align-items:flex-start;gap:1px}.pfx .pl b,.pfx .pl small{position:static}.pfx .pl b{font-size:12px}.pfx .pl small{font-size:10.5px}.pfx .al{text-decoration:none;display:inline-block;font:700 10.5px/1.15 var(--f-display);color:#000;border-top:1.6px solid transparent;border-bottom:1.6px solid transparent;padding:0 1px}.pfx .al.a{border-top-color:#000}.pfx .al.b{border-bottom-color:#000}.pfx .al.m{border-top-color:#000;border-bottom-color:#000}.proc-arr svg{position:absolute;left:-8px;top:-8px;width:16px;height:16px;overflow:visible}.proc.proc-SID,.proc.proc-STAR,.proc.proc-APP{stroke:#111;stroke-dasharray:none}:root[data-theme="dark"] .proc.proc-SID,:root[data-theme="dark"] .proc.proc-STAR,:root[data-theme="dark"] .proc.proc-APP{stroke:#e8eef6}.proc.proc-MAPP{stroke:#111;stroke-dasharray:9 6;stroke-width:2.6}:root[data-theme="dark"] .proc.proc-MAPP{stroke:#e8eef6}.proc.proc-HOLD{stroke:#111}:root[data-theme="dark"] .proc.proc-HOLD{stroke:#e8eef6}`; document.head.appendChild(st); }
+Object.assign(RU,{'Where a turn starts':'Начало разворота','Over the fix (fly-over)':'Над точкой (fly-over)','Before the fix (fly-by)':'С упреждением до точки (fly-by)'});
 /* ================= boot ================= */
 (()=>{ let seed=null; try{ const tx=$('#fmn-seed').textContent.trim(); if(tx) seed=JSON.parse(tx); }catch(e){}
   const fresh=!lsGet('fmn.mission.v1');
