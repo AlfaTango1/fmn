@@ -3659,7 +3659,7 @@ function stationFor(a,nm){ let st=null; if(nm) st=allPts().filter(p=>p.name.toUp
 const turnR=(kmh,bank)=>{ const v=(+kmh||300)/3.6; return v*v/(9.81*Math.tan((+bank||30)*Math.PI/180)); };
 const turnRate=(kmh,bank)=>9.81*Math.tan((+bank||30)*Math.PI/180)/((+kmh||300)/3.6)*180/Math.PI;
 function procLen(fx){ let s=0; for(let i=1;i<fx.length;i++) if(fx[i].lat!=null&&fx[i-1].lat!=null) s+=inverse(fx[i-1].lat,fx[i-1].lon,fx[i].lat,fx[i].lon).dist; return s; }
-const fixTxt=fixes=>fixes.filter(f=>!f.arcPart).map(f=>[f.name,f.src||(f.lat!=null&&!f.named?fmtLL(f.lat,f.lon,'DMS'):''),f.alt||''].filter(Boolean).join(' ; ')).join('\n');
+const fixTxt=fixes=>fixes.filter(f=>!f.arcPart).map(f=>{ const m=f.fb?'FB':f.fo?'FO':''; return m?[f.name,f.src||(f.lat!=null&&!f.named?fmtLL(f.lat,f.lon,'DMS'):''),f.alt||'',m].join(' ; '):[f.name,f.src||(f.lat!=null&&!f.named?fmtLL(f.lat,f.lon,'DMS'):''),f.alt||''].filter(Boolean).join(' ; '); }).join('\n');
 /* fix list parser — one fix per line: name ; position ; altitude. Position: coordinates | R278 D18.9 [station] | C081 D4 (course & distance from the previous fix) | RWY 24 | ARC D10 R120-R200 [station] | blank = point of that name */
 function parseFixes(txt,a){ const out=[], v=adVar(a);
   txt.split(/\n/).map(s=>s.trim()).filter(Boolean).forEach(ln=>{ const f=ln.split(/;|\t/).map(s=>s.trim()); let name=f[0], spec=f[1]||'', alt=f[2]||''; const prev=out[out.length-1];
@@ -3737,7 +3737,7 @@ Object.assign(ACT,{
   chGen:()=>{ const P=VIEW.pd, a=AD(P.ad), d=P.d; let r=null; if(d.type==='HOLD') r=genHold(a,d.gen||{},d.spd,d.bank); else r=genProc(a,d);
     if(!r){ toast(d.type==='HOLD'?t('Enter the holding fix (point name, R/D or coordinates).'):t('Enter the runway with its heading (and thresholds) first.')); return; }
     d._txt=r; if(d.gen&&d.gen.end&&!d.rwy) d.rwy=d.gen.end; renderPanel(); const fx=parseFixes(r,a); zoomProc(a,fx); },
-  chPrev:()=>{ const P=VIEW.pd, a=AD(P.ad); const fx=parseFixes(P.d._txt||'',a); const bad=fx.filter(f=>f.lat==null).map(f=>f.name); if(bad.length) toast(t('Not found: {n}',{n:bad.join(', ')})); zoomProc(a,fx); chPreview(); if(isPhone()) setSheet('mid'); },
+  chPrev:()=>{ const P=VIEW.pd, a=AD(P.ad); const fx=parseFixes(P.d._txt||'',a); const bad=fx.filter(f=>f.lat==null).map(f=>f.name); if(bad.length) toast(t('Not found: {n}',{n:bad.join(', ')})); zoomProc(a,fx); chPreview(); if(isPhone()) setSheet('half'); },
   chPick:()=>{ setMode('chartPick',{}); },
   chSave:()=>{ const P=VIEW.pd, a=AD(P.ad), d=P.d; const fx=parseFixes(d._txt||'',a); if(fx.filter(f=>f.lat!=null).length<2){ toast(t('A scheme needs at least two points with a position.')); return; }
     const pr={id:P.i>=0?a.procs[P.i].id:uid(),type:d.type,name:d.name||'',rwy:d.rwy||(d.gen&&d.gen.end)||'',vis:true,spd:num(d.spd),bank:num(d.bank),round:d.round!==false,gen:d.gen||null,fixes:fx};
@@ -4899,8 +4899,8 @@ CFG.libShow.trf=false;
 /* ================= scheme builder: every fix as radial / distance from an aerodrome navaid ================= */
 const RD_RE=/^R\s*(\d{1,3}(?:\.\d+)?)\s*°?\s*[\/ ]?\s*D\s*(\d+(?:\.\d+)?)\s*(nm|км|km)?(?:\s+(?:from\s+|от\s+)?(\S+))?$/i;
 function pfxRows(d){ return (d._txt||'').split('\n').map(s=>s.trim()).filter(Boolean).map(ln=>{ const f=ln.split(/;|\t/).map(s=>s.trim()), spec=f[1]||'', m=RD_RE.exec(spec);
-  return m?{name:f[0]||'',alt:f[2]||'',rd:true,r:m[1],d:m[2],u:/nm/i.test(m[3]||'')?'nm':'km',st:m[4]||''}:{name:f[0]||'',alt:f[2]||'',rd:false,spec}; }); }
-const pfxText=rows=>rows.map(r=>[r.name,r.rd?`R${r.r} D${r.d}${r.u==='nm'?' NM':''}${r.st?' '+r.st:''}`:(r.spec||''),r.alt||''].join(' ; ').replace(/( ; )+$/,'')).join('\n');
+  const md=/^(FB|ПР|BY)/i.test(f[3]||'')?'FB':/^(FO|ПЛ|OVER)/i.test(f[3]||'')?'FO':''; return m?{name:f[0]||'',alt:f[2]||'',m:md,rd:true,r:m[1],d:m[2],u:/nm/i.test(m[3]||'')?'nm':'km',st:m[4]||''}:{name:f[0]||'',alt:f[2]||'',m:md,rd:false,spec}; }); }
+const pfxText=rows=>rows.map(r=>[r.name,r.rd?`R${r.r} D${r.d}${r.u==='nm'?' NM':''}${r.st?' '+r.st:''}`:(r.spec||''),r.alt||'',r.m||''].join(' ; ').replace(/( ; )+$/,'')).join('\n');
 function pfxStations(a){ const pr=['VORDME','VOR','DME','TACAN','RSBN','NDB','LOM','LMM'], ok=p=>/^\S+$/.test(p.name||'');
   const own=LIB.points.filter(p=>p.ad===a.id&&isNav(p)&&ok(p)).sort((x,y)=>pr.indexOf(x.type)-pr.indexOf(y.type));
   const near=allPts().filter(p=>isNav(p)&&ok(p)&&!own.includes(p)&&p.lat!=null&&inverse(a.lat,a.lon,p.lat,p.lon).dist<50000).sort((x,y)=>inverse(a.lat,a.lon,x.lat,x.lon).dist-inverse(a.lat,a.lon,y.lat,y.lon).dist).slice(0,6);
@@ -5068,14 +5068,18 @@ Object.assign(RU,{'Plan':'План','Charts and information':'Схемы и ин
 /* ================= turns start over the fix (fly-over) + Jeppesen-style scheme symbols ================= */
 const procPathBy=procPath;
 function procPathOver(fx,R0){ if(fx.length<3||!R0) return fx.map(f=>[f.lat,f.lon]); const RF=typeof R0==='function'?R0:()=>R0; const out=[[fx[0].lat,fx[0].lon]]; let P=[fx[0].lat,fx[0].lon];
-  for(let i=1;i<fx.length;i++){ const N=fx[i]; out.push([N.lat,N.lon]); if(i===fx.length-1) break;
-    const M=fx[i+1], k=Math.cos(N.lat*Math.PI/180), K=111320, xy=(la,lo)=>[(lo-N.lon)*K*k,(la-N.lat)*K], ll=q=>[N.lat+q[1]/K,N.lon+q[0]/(K*k)];
+  for(let i=1;i<fx.length;i++){ const N=fx[i]; if(i===fx.length-1){ out.push([N.lat,N.lon]); break; }
+    const M=fx[i+1], by=!!N.fb||(CFG.turnMode==='by'&&!N.fo);
+    if(by){ const seg=procPathBy([{lat:P[0],lon:P[1]},N,M],RF(i)); if(seg.length>=4){ const mid=seg.slice(1,-1); mid.forEach(q=>out.push(q)); P=mid[mid.length-1]; } else { out.push([N.lat,N.lon]); P=[N.lat,N.lon]; } continue; }
+    out.push([N.lat,N.lon]);
+    const k=Math.cos(N.lat*Math.PI/180), K=111320, xy=(la,lo)=>[(lo-N.lon)*K*k,(la-N.lat)*K], ll=q=>[N.lat+q[1]/K,N.lon+q[0]/(K*k)];
     const p=xy(P[0],P[1]), m=xy(M.lat,M.lon), lp=Math.hypot(p[0],p[1]); if(lp<1||Math.hypot(m[0],m[1])<1){ P=[N.lat,N.lon]; continue; }
-    const hx=-p[0]/lp, hy=-p[1]/lp, cr=hx*m[1]-hy*m[0], dt=hx*m[0]+hy*m[1], turn=Math.atan2(cr,dt); /* + = left */
-    const R=RF(i); if(!R||Math.abs(turn)<0.035){ P=[N.lat,N.lon]; continue; }
-    const left=turn>0, O=left?[-hy*R,hx*R]:[hy*R,-hx*R], dx=m[0]-O[0], dy=m[1]-O[1], d=Math.hypot(dx,dy);
-    if(d<=R*1.02){ P=[N.lat,N.lon]; continue; }
-    const th=Math.atan2(dy,dx), al=Math.acos(R/d), ph1=left?th-al:th+al, ph0=Math.atan2(-O[1],-O[0]);
+    const hx=-p[0]/lp, hy=-p[1]/lp, cr=hx*m[1]-hy*m[0], dt=hx*m[0]+hy*m[1], turn=Math.atan2(cr,dt);
+    let R=RF(i); if(!R||Math.abs(turn)<0.035){ P=[N.lat,N.lon]; continue; }
+    const left=turn>0, nx=left?-hy:hy, ny=left?hx:-hx*(1), lat=m[0]*nx+m[1]*ny;
+    R=Math.min(R,0.9*(m[0]*m[0]+m[1]*m[1])/(2*Math.max(lat,1)));   // the next fix is always outside the turn circle: shrink the radius instead of dropping the arc
+    const O=[nx*R,ny*R], dx=m[0]-O[0], dy=m[1]-O[1], d=Math.hypot(dx,dy);
+    const th=Math.atan2(dy,dx), al=Math.acos(Math.min(1,R/d)), ph1=left?th-al:th+al, ph0=Math.atan2(-O[1],-O[0]);
     let da=left?ph1-ph0:ph0-ph1; while(da<0) da+=2*Math.PI; while(da>=2*Math.PI) da-=2*Math.PI; if(!left) da=-da;
     const n=Math.max(4,Math.ceil(Math.abs(da)/0.1)); let last=null; for(let s=1;s<=n;s++){ const g=ph0+da*s/n; last=[O[0]+R*Math.cos(g),O[1]+R*Math.sin(g)]; out.push(ll(last)); }
     P=ll(last); }
@@ -5089,7 +5093,7 @@ function fixSymHtml(f){ const n=(f.name||'').toUpperCase();
   if(/^(FAF|FAP)\b/.test(n)) return pfxSvg('<path d="M-7,-7 L0,-2.4 L7,-7 L2.4,0 L7,7 L0,2.4 L-7,7 L-2.4,0Z" fill="#000" stroke="#fff" stroke-width="1"/>');
   if(/^(MAPT?|MAP\b)/.test(n)) return pfxSvg('<path d="M0,-7 L7,6 L-7,6Z" fill="#000" stroke="#fff" stroke-width="1"/>');
   if(/^(RWY|ВПП)/.test(n)) return pfxSvg('<rect x="-5" y="-2" width="10" height="4" fill="#000" stroke="#fff" stroke-width="1"/>');
-  return pfxSvg('<circle r="7.6" fill="#fff" fill-opacity=".85" stroke="#000" stroke-width="1.6"/><path d="M0,-6 L1.5,-1.5 L6,0 L1.5,1.5 L0,6 L-1.5,1.5 L-6,0 L-1.5,-1.5Z" fill="#000"/>'); }
+  const by=!!f.fb||(CFG.turnMode==='by'&&!f.fo); return pfxSvg((by?'':'<circle r="7.6" fill="#fff" fill-opacity=".85" stroke="#000" stroke-width="1.6"/>')+'<path d="M0,-6 L1.5,-1.5 L6,0 L1.5,1.5 L0,6 L-1.5,1.5 L-6,0 L-1.5,-1.5Z" fill="#000"/>'); }
 function altBars(s){ s=(s||'').trim(); if(!s) return ''; const m=/^([+≥>]|[-≤<]|=)\s*(.+)$/.exec(s); if(!m) return `<u class="al">${esc(s)}</u>`; const c=m[1]; return `<u class="al ${/[+≥>]/.test(c)?'a':/[-≤<]/.test(c)?'b':'m'}">${esc(m[2])}</u>`; }
 function pfxLabel(f){ return `<span class="pfx">${fixSymHtml(f)}<span class="pl"><b>${esc(f.name)}</b>${f.src&&/^R\s*\d/i.test(f.src)?`<small>${esc(f.src)}</small>`:''}${f.alt?altBars(f.alt):''}</span></span>`; }
 /* arrowheads along each leg, as on approach charts */
@@ -5099,6 +5103,47 @@ function pfxLabel(f){ return `<span class="pfx">${fixSymHtml(f)}<span class="pl"
     gProc.addLayer(L.marker([q.lat,q.lon],{interactive:false,icon:L.divIcon({className:'proc-arr',iconSize:[0,0],html:`<svg viewBox="-8 -8 16 16" style="transform:rotate(${ang.toFixed(1)}deg)"><path d="M-6,-5 L6,0 L-6,5 L-3,0Z" fill="#000" stroke="#fff" stroke-width="1"/></svg>`})})); } }; }
 { const st=document.createElement('style'); st.textContent=`.pfx .pfs{position:absolute;left:-10px;top:-10px;width:20px;height:20px;overflow:visible}.pfx i{display:none}.pfx .pl{position:absolute;left:12px;top:-13px;display:flex;flex-direction:column;align-items:flex-start;gap:1px}.pfx .pl b,.pfx .pl small{position:static}.pfx .pl b{font-size:12px}.pfx .pl small{font-size:10.5px}.pfx .al{text-decoration:none;display:inline-block;font:700 10.5px/1.15 var(--f-display);color:#000;border-top:1.6px solid transparent;border-bottom:1.6px solid transparent;padding:0 1px}.pfx .al.a{border-top-color:#000}.pfx .al.b{border-bottom-color:#000}.pfx .al.m{border-top-color:#000;border-bottom-color:#000}.proc-arr svg{position:absolute;left:-8px;top:-8px;width:16px;height:16px;overflow:visible}.proc.proc-SID,.proc.proc-STAR,.proc.proc-APP{stroke:#111;stroke-dasharray:none}:root[data-theme="dark"] .proc.proc-SID,:root[data-theme="dark"] .proc.proc-STAR,:root[data-theme="dark"] .proc.proc-APP{stroke:#e8eef6}.proc.proc-MAPP{stroke:#111;stroke-dasharray:9 6;stroke-width:2.6}:root[data-theme="dark"] .proc.proc-MAPP{stroke:#e8eef6}.proc.proc-HOLD{stroke:#111}:root[data-theme="dark"] .proc.proc-HOLD{stroke:#e8eef6}`; document.head.appendChild(st); }
 Object.assign(RU,{'Where a turn starts':'Начало разворота','Over the fix (fly-over)':'Над точкой (fly-over)','Before the fix (fly-by)':'С упреждением до точки (fly-by)'});
+/* ================= scheme editor v2: compact point cards, fly-over / fly-by per point, altitude constraints, sticky actions ================= */
+{ const _pf=parseFixes; parseFixes=function(txt,a){ const ls=(txt||'').split(/\n/).map(s=>s.trim()).filter(Boolean);
+    if(!ls.some(l=>l.split(/;|\t/).length>3)) return _pf(txt,a);
+    let out=[], acc=[]; ls.forEach(l=>{ const f=l.split(/;|\t/).map(s=>s.trim()); acc.push(f.slice(0,3).join(' ; ')); const r=_pf(acc.join('\n'),a), flag=f[3]||'';
+      r.slice(out.length).forEach(x=>{ if(/^(FB|ПР|BY)/i.test(flag)) x.fb=true; else if(/^(FO|ПЛ|OVER)/i.test(flag)) x.fo=true; }); out=out.concat(r.slice(out.length)); });
+    return out; }; }
+{ const _pp=procPath; procPath=function(fx,R0){ return fx.some(f=>f.fb||f.fo)?procPathOver(fx,R0):_pp(fx,R0); }; }
+const PFX_NAMES=['IAF','IF','FAF','FAP','SDF','MAPt','MAHF','HOLD','OM','MM','IM','LOM','LMM'];
+const ALT_PRE=/^([+≥>]|[-≤<]|=)\s*(.*)$/;
+const altSplit=s=>{ const m=ALT_PRE.exec((s||'').trim()); return m?[/[+≥>]/.test(m[1])?'≥':/[-≤<]/.test(m[1])?'≤':'=',m[2]]:['',(s||'').trim()]; };
+vPfxTable=function(a,d){ const rows=pfxRows(d), sts=pfxStations(a), u=d.unit==='nm'?'nm':'km', def=pfxDefSt(a,d), glob=CFG.turnMode==='by'?'FB':'FO', so=d._so||(d._so={});
+  const stSel=(v,att)=>`<select ${att}>${sts.map(s=>`<option value="${esc(s.name)}"${(v||def)===s.name?' selected':''}>${esc(s.name)} · ${esc(s.type)}</option>`).join('')}${sts.length?'':`<option value="">${t('Aerodrome ARP')}</option>`}</select>`;
+  const near=allPts().filter(p=>p.lat!=null&&p.name&&inverse(a.lat,a.lon,p.lat,p.lon).dist<150000).sort((x,y)=>inverse(a.lat,a.lon,x.lat,x.lon).dist-inverse(a.lat,a.lon,y.lat,y.lon).dist).slice(0,80);
+  const mb=(r,i)=>{ const m=r.m||glob; return `<button class="btn sm pfx-md${r.m?' on':''}" data-act="pfxMode" data-i="${i}" title="${t(m==='FB'?'Fly-by: the turn starts before the fix':'Fly-over: the turn starts over the fix')}">${m==='FB'?'✧':'⊙'}</button>`; };
+  return `<div class="pfxb"><div class="lm-h">${t('Scheme points')}</div>
+  <datalist id="pfxNames">${PFX_NAMES.map(n=>`<option value="${n}">`).join('')}</datalist>
+  <div class="pfx-bar"><label class="f" style="flex:1 1 150px"><span>${t('Reference navaid')}</span>${stSel(def,'data-on="pfx" data-f="defSt"')}</label>
+   <div class="seg" style="align-self:end"><button aria-pressed="${u==='km'}" data-act="pfxUnit" data-k="km">km</button><button aria-pressed="${u==='nm'}" data-act="pfxUnit" data-k="nm">NM</button></div></div>
+  <ul class="pfx-list">${rows.map((r,i)=>{ const [ap,av]=altSplit(r.alt), other=r.rd&&r.st&&r.st!==def;
+   return `<li class="pfx-row pfx2"><div class="pfx2a"><button class="pfx-nb${other?' on':''}" data-act="pfxSt" data-i="${i}" title="${t('Reference navaid for this point')}">${i+1}</button><input class="txt" list="pfxNames" autocapitalize="characters" data-on="pfx" data-i="${i}" data-f="name" value="${esc(r.name)}" placeholder="${t('Name')}">
+    <select data-on="pfx" data-i="${i}" data-f="am" title="${t('Altitude: ≥ at or above, ≤ at or below, = mandatory')}"><option value=""${ap===''?' selected':''}>—</option><option${ap==='≥'?' selected':''}>≥</option><option${ap==='≤'?' selected':''}>≤</option><option${ap==='='?' selected':''}>=</option></select>
+    <input class="num" inputmode="decimal" data-on="pfx" data-i="${i}" data-f="alt" value="${esc(av)}" placeholder="${t('Alt')}"></div>
+   <div class="pfx2b">${r.rd?`<label class="pfx-u"><input class="num" inputmode="decimal" data-on="pfx" data-i="${i}" data-f="r" value="${esc(r.r)}"><i>R°</i></label><label class="pfx-u"><input class="num" inputmode="decimal" data-on="pfx" data-i="${i}" data-f="d" value="${esc(r.d)}"><i>${u==='nm'?'NM':'km'}</i></label>`
+     :`<input class="txt" style="grid-column:1/3" data-on="pfx" data-i="${i}" data-f="spec" value="${esc(r.spec||'')}" placeholder="${t('position')}">`}
+     ${mb(r,i)}<button class="btn sm pfx-ic" data-act="pfxUp" data-i="${i}" ${i?'':'disabled'} aria-label="up">↑</button><button class="btn sm pfx-ic" data-act="pfxDn" data-i="${i}" ${i<rows.length-1?'':'disabled'} aria-label="down">↓</button><button class="btn sm danger pfx-ic" data-act="pfxDel" data-i="${i}" aria-label="delete">✕</button></div>
+   ${r.rd&&(other||so[i])?`<div class="pfx2c">${stSel(r.st,`data-on="pfx" data-i="${i}" data-f="st"`)}</div>`:''}
+   ${r.rd?'':`<div class="pfx2c"><button class="btn sm" data-act="pfxToRD" data-i="${i}">${t('to R/D')}</button></div>`}</li>`; }).join('')||`<li class="empty">${t('No points yet — tap the map or add one from the list.')}</li>`}</ul>
+  <div class="actions"><button class="btn primary" data-act="chPick">${t('Add point by tapping the map')}</button><button class="btn" data-act="pfxAdd">${t('Add by radial / distance')}</button><button class="btn" data-act="pfxAll" ${rows.some(r=>!r.rd)?'':'disabled'}>${t('All to radial / distance')}</button></div>
+  <div class="pfx-bar"><label class="f" style="flex:1 1 180px"><span>${t('From list')}</span><select data-on="pfxL"><option value="">—</option>${near.map(p=>`<option value="${esc(p.id)}"${d.pl===p.id?' selected':''}>${esc(p.name)} · ${esc(p.type||'')} · ${fmtDist(inverse(a.lat,a.lon,p.lat,p.lon).dist)}</option>`).join('')}</select></label><button class="btn" style="align-self:end" data-act="pfxList" ${d.pl?'':'disabled'}>${t('Add')}</button></div></div>`; };
+{ const _o=ON.pfx; ON.pfx=el=>{ const f=el.dataset.f, P=VIEW.pd; if(P&&(f==='am'||f==='alt')){ const li=el.closest('li'), am=li.querySelector('[data-f="am"]').value, av=li.querySelector('[data-f="alt"]').value.trim(), rows=pfxRows(P.d), r=rows[+el.dataset.i]; if(!r) return;
+      const [p2,v2]=altSplit(av); r.alt=(p2||am)+(v2||''); if(p2&&f==='alt') li.querySelector('[data-f="am"]').value=p2; if(p2&&f==='alt') li.querySelector('[data-f="alt"]').value=v2; P.d._txt=pfxText(rows); chPreview(); return; }
+    _o(el); }; }
+Object.assign(ACT,{
+  pfxMode:d=>{ const P=VIEW.pd, rows=pfxRows(P.d), r=rows[+d.i]; if(!r) return; const g=CFG.turnMode==='by'?'FB':'FO', c=r.m||g, o=c==='FB'?'FO':'FB'; r.m=(o===g)?'':o; pfxSet(rows); chPreview(); },
+  pfxSt:d=>{ const P=VIEW.pd; if(!P) return; const so=P.d._so||(P.d._so={}); so[+d.i]=!so[+d.i]; renderPanel(); } });
+{ const _a=ACT.pfxAdd; ACT.pfxAdd=d=>{ _a(d); setTimeout(()=>{ const l=document.querySelectorAll('.pfx2'); const x=l.length&&l[l.length-1].querySelector('[data-f="name"]'); if(x){ x.scrollIntoView({block:'center'}); x.focus(); x.select(); } },60); chPreview(); }; }
+{ const _v=vChartEdit; vChartEdit=function(){ return _v().replace(/<div class="actions"><button class="btn" data-act="chPrev">[^<]*<\/button><\/div>\s*/,'').replace('<div class="actions"><button class="btn primary big" data-act="chSave">',`<div class="actions pfx-sticky"><button class="btn" data-act="chPrev">${t('Preview')}</button><button class="btn primary big" data-act="chSave">`); }; }
+{ const _n=ACT.chNew, _e=ACT.chEdit; ACT.chNew=d=>{ _n(d); if(isPhone()) setSheet('half'); }; ACT.chEdit=d=>{ _e(d); if(isPhone()) setSheet('half'); }; }
+Object.assign(RU,{'Scheme points':'Точки схемы','Reference navaid for this point':'РНС для этой точки (нажмите на номер)','Altitude: ≥ at or above, ≤ at or below, = mandatory':'Высота: ≥ не ниже, ≤ не выше, = обязательная','Fly-by: the turn starts before the fix':'Не над точкой: разворот начинается до точки (fly-by) — нажмите, чтобы сменить','Fly-over: the turn starts over the fix':'Над точкой: разворот начинается над точкой (fly-over) — нажмите, чтобы сменить'});
+{ const st=document.createElement('style'); st.textContent=`.pfx2a{display:grid;grid-template-columns:30px minmax(0,1fr) 46px 66px;gap:5px;align-items:center}.pfx2b{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 36px 32px 32px 32px;gap:5px;margin-top:5px;align-items:center}.pfx2c{margin-top:5px}.pfx2 select,.pfx2 input{min-height:36px}.pfx-nb{height:30px;border-radius:15px;border:1px solid var(--line);background:var(--surface);color:inherit;font:700 12px var(--f-display)}.pfx-nb.on{background:var(--accent,#0a84ff);color:#fff}.pfx-md{font-size:16px;padding:0}.pfx-md:not(.on){opacity:.55}.pfx-ic{padding:0}.pfx-sticky{position:sticky;bottom:0;z-index:6;background:var(--surface,#1c1c1e);padding:8px 0;margin:8px 0 0;border-top:1px solid var(--line)}.pfx-sticky .btn{flex:1}`; document.head.appendChild(st); }
+
 /* ================= boot ================= */
 (()=>{ let seed=null; try{ const tx=$('#fmn-seed').textContent.trim(); if(tx) seed=JSON.parse(tx); }catch(e){}
   const fresh=!lsGet('fmn.mission.v1');
