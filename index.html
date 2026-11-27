@@ -1594,7 +1594,7 @@ function setBase(k){
   CFG.layer=k; saveCfg();
   if(baseLayer) map.removeLayer(baseLayer);
   const d=layerDef(k);
-  baseLayer=new CachedLayer(d.url,{key:k,subdomains:d.sub||'abc',maxZoom:20,maxNativeZoom:d.max,attribution:d.attr,fb:d.fb}).addTo(map);
+  baseLayer=new CachedLayer(d.url,{key:k,subdomains:d.sub||'abc',maxZoom:20,maxNativeZoom:d.max,attribution:d.attr,fb:d.fb,className:d.cls||''}).addTo(map);
   baseLayer.bringToBack(); setOverlays(); renderLayerMenu();
 }
 const ovlLayers={};
@@ -5143,6 +5143,59 @@ Object.assign(ACT,{
 { const _n=ACT.chNew, _e=ACT.chEdit; ACT.chNew=d=>{ _n(d); if(isPhone()) setSheet('half'); }; ACT.chEdit=d=>{ _e(d); if(isPhone()) setSheet('half'); }; }
 Object.assign(RU,{'Scheme points':'Точки схемы','Reference navaid for this point':'РНС для этой точки (нажмите на номер)','Altitude: ≥ at or above, ≤ at or below, = mandatory':'Высота: ≥ не ниже, ≤ не выше, = обязательная','Fly-by: the turn starts before the fix':'Не над точкой: разворот начинается до точки (fly-by) — нажмите, чтобы сменить','Fly-over: the turn starts over the fix':'Над точкой: разворот начинается над точкой (fly-over) — нажмите, чтобы сменить'});
 { const st=document.createElement('style'); st.textContent=`.pfx2a{display:grid;grid-template-columns:30px minmax(0,1fr) 46px 66px;gap:5px;align-items:center}.pfx2b{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 36px 32px 32px 32px;gap:5px;margin-top:5px;align-items:center}.pfx2c{margin-top:5px}.pfx2 select,.pfx2 input{min-height:36px}.pfx-nb{height:30px;border-radius:15px;border:1px solid var(--line);background:var(--surface);color:inherit;font:700 12px var(--f-display)}.pfx-nb.on{background:var(--accent,#0a84ff);color:#fff}.pfx-md{font-size:16px;padding:0}.pfx-md:not(.on){opacity:.55}.pfx-ic{padding:0}.pfx-sticky{position:sticky;bottom:0;z-index:6;background:var(--surface,#1c1c1e);padding:8px 0;margin:8px 0 0;border-top:1px solid var(--line)}.pfx-sticky .btn{flex:1}`; document.head.appendChild(st); }
+
+/* ================= Garmin GTN 650 look: black map, GTN symbols, magenta flight plan, cyan data labels ================= */
+LAYERS.gtn={g:'night',name:'GTN 650 · black map',url:'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',sub:'abcd',max:20,attr:'© OpenStreetMap contributors · © CARTO',cls:'gtn-base',fb:['cartoDark','osm']};
+LAYERS.gtnT={g:'night',name:'GTN 650 · terrain',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',sub:'',max:16,attr:'Hillshade © Esri',cls:'gtn-terr',fb:['gtn']};
+const GB='#3fa9ff', GM='#ff4df0', GC='#34e8ff', GW='#ffffff', GG='#3de07a', GY='#ffd60a', GR='#ff3b30';
+const gRwy=(c)=>`<rect x="-1.5" y="-6.2" width="3" height="12.4" fill="${c}" transform="rotate(35)"/>`;
+const gHex=(c,w=1.9)=>`<polygon points="-8,0 -4,-7 4,-7 8,0 4,7 -4,7" fill="#000" fill-opacity=".55" stroke="${c}" stroke-width="${w}"/>`;
+const gTri=(f,c)=>`<polygon points="0,-8 7.4,5.6 -7.4,5.6" fill="${f}" stroke="${c}" stroke-width="1.9" stroke-linejoin="round"/>`;
+const gStar=(f,c)=>`<polygon points="0,-9.4 2.2,-2.2 9.4,0 2.2,2.2 0,9.4 -2.2,2.2 -9.4,0 -2.2,-2.2" fill="${f}" stroke="${c}" stroke-width="1.5" stroke-linejoin="round"/>`;
+const gNdb=SYM.NDB.replace(/currentColor/g,GM), gTick=`<path d="M0 -8v-3M0 8v3M8 0h3M-8 0h-3" stroke="${GB}" stroke-width="1.5"/>`, gDot=`<circle r="1.8" fill="${GB}"/>`;
+const gLobe=`<rect x="-3.5" y="-10.4" width="7" height="3.2" fill="${GB}"/>`;
+const SYM_G={
+  AD:`<circle r="8.2" fill="#000" fill-opacity=".55" stroke="${GB}" stroke-width="2"/>${gRwy(GW)}`, APT:`<circle r="8.2" fill="#000" fill-opacity=".55" stroke="${GB}" stroke-width="2"/>${gRwy(GW)}`,
+  ADM:`<circle r="8.2" fill="#000" fill-opacity=".55" stroke="${GM}" stroke-width="2"/>${gRwy(GW)}`,
+  HP:`<circle r="8.6" fill="#000" fill-opacity=".55" stroke="${GB}" stroke-width="2"/><path d="M-3.6 -5v10M3.6 -5v10M-3.6 0h7.2" stroke="${GW}" stroke-width="2"/>`,
+  MHP:`<circle r="8.6" fill="#000" fill-opacity=".55" stroke="${GM}" stroke-width="2"/><path d="M-3.6 -5v10M3.6 -5v10M-3.6 0h7.2" stroke="${GW}" stroke-width="2"/>`,
+  VOR:gHex(GB)+gDot+gTick, VORDME:`<rect x="-10.2" y="-8.4" width="20.4" height="16.8" fill="none" stroke="${GB}" stroke-width="1.7"/>`+gHex(GB)+gDot,
+  DME:`<rect x="-7.5" y="-6.5" width="15" height="13" fill="#000" fill-opacity=".55" stroke="${GB}" stroke-width="1.9"/>`+gDot, TACAN:gHex(GB)+gLobe+`<g transform="rotate(120)">${gLobe}</g><g transform="rotate(240)">${gLobe}</g>`+gDot,
+  RSBN:gHex(GB)+gLobe+`<g transform="rotate(120)">${gLobe}</g><g transform="rotate(240)">${gLobe}</g>`+gDot+`<circle r="11" fill="none" stroke="${GB}" stroke-width="1"/>`,
+  NDB:gNdb+`<circle r="2" fill="${GM}"/>`, LOM:gNdb+`<circle r="2" fill="${GM}"/><circle r="11.5" fill="none" stroke="${GM}" stroke-width="1.2"/>`, LMM:gNdb+`<circle r="2" fill="${GM}"/>`,
+  WPT:gTri('#000',GC)+'', UWP:`<polygon points="0,-8 6.4,0 0,8 -6.4,0" fill="#000" fill-opacity=".55" stroke="${GW}" stroke-width="1.9" stroke-linejoin="round"/>`,
+  RP:gTri(GC,'#000'), RPO:gTri('#000',GC), RNAV:gStar('#000',GC), RMPT:gStar(GC,'#000'),
+  STL:`<circle r="7" fill="#000" fill-opacity=".55" stroke="${GW}" stroke-width="2"/>`, GEO:`<polygon points="0,-9 7,0 0,9 -7,0" fill="#000" fill-opacity=".55" stroke="${GY}" stroke-width="2"/>`,
+  OBJ:`<rect x="-6.5" y="-6.5" width="13" height="13" fill="#000" fill-opacity=".55" stroke="${GW}" stroke-width="2"/>`, TGT:`<path d="M-7 -7 7 7M-7 7 7 -7" stroke="${GR}" stroke-width="3.2" stroke-linecap="round"/>`
+};
+{ const _ss=symSvg; symSvg=(tp,disc)=>CFG.style==='gtn'?`<svg viewBox="-12 -12 24 24" width="24" height="24" aria-hidden="true">${SYM_G[tp]||SYM[tp]||SYM_G.WPT}</svg>`:_ss(tp,disc); }
+const gtnApply=(sw)=>{ document.body.classList.toggle('gtn',CFG.style==='gtn');
+  if(sw){ if(CFG.style==='gtn'){ if(!/^gtn/.test(CFG.layer)){ CFG.prevLayer=CFG.layer; setBase('gtn'); } } else if(/^gtn/.test(CFG.layer)){ setBase(CFG.prevLayer&&!/^gtn/.test(CFG.prevLayer)?CFG.prevLayer:'otm'); }
+    try{ renderLib(); renderMap(); applyTheme(); }catch(e){} } };
+gtnApply(false);
+{ const _c=ON.cfg; ON.cfg=el=>{ _c(el); if(el.dataset.k==='style'){ saveCfg(); gtnApply(true); } }; }
+{ const _vm=vMore; vMore=function(){ return _vm().replace(/(<label class="f"><span>[^<]*(?:Map at night|Карта ночью)[^<]*<\/span>[\s\S]*?<\/label>)/,`<label class="f"><span>${t('Map style and symbols')}</span><select data-on="cfg" data-k="style"><option value="std"${CFG.style!=='gtn'?' selected':''}>${t('Standard')}</option><option value="gtn"${CFG.style==='gtn'?' selected':''}>Garmin GTN 650</option></select></label>$1`); }; }
+Object.assign(RU,{'Map style and symbols':'Стиль карты и знаков','Standard':'Стандартный'});
+{ const st=document.createElement('style'); st.textContent=`body.gtn .leaflet-container,body.gtn #map{background:#000}
+body.gtn .leaflet-tile-pane{filter:none!important}
+.gtn-base{filter:brightness(1.18) contrast(1.15)}
+.gtn-terr{filter:brightness(.5) sepia(1) saturate(2.2) hue-rotate(-18deg) contrast(1.35)}
+body.gtn .pt-ico{color:#fff}
+body.gtn .pt-ico svg{filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000)}
+body.gtn .pt-lbl{text-transform:none;font-weight:600;letter-spacing:.02em;color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000}
+body.gtn .pt-ico.t-VOR .pt-lbl,body.gtn .pt-ico.t-VORDME .pt-lbl,body.gtn .pt-ico.t-DME .pt-lbl,body.gtn .pt-ico.t-TACAN .pt-lbl{color:${GB}}
+body.gtn .pt-ico.t-NDB .pt-lbl,body.gtn .pt-ico.t-LOM .pt-lbl,body.gtn .pt-ico.t-LMM .pt-lbl{color:${GM}}
+body.gtn .pt-ico.t-WPT .pt-lbl,body.gtn .pt-ico.t-RP .pt-lbl{color:${GC}}
+body.gtn .rte-case{stroke:#000!important;stroke-opacity:.8!important}
+body.gtn .rte{stroke:#fff!important}body.gtn .rte.active,body.gtn .rte-leg{stroke:#ff00ff!important}
+body.gtn .rte-leg{stroke-width:5px}body.gtn .rte-past{stroke:#9aa0a6!important}
+body.gtn .z-R,body.gtn .z-D,body.gtn .z-P{stroke:${GR}!important;fill:${GR}!important;fill-opacity:.07!important;stroke-dasharray:none!important}
+body.gtn .z-C{stroke:${GB}!important;fill:${GB}!important;fill-opacity:.04!important;stroke-dasharray:9 5!important}
+body.gtn #hud{background:#000!important;border-bottom:1px solid #2a2a2a}
+body.gtn .gf{background:#000!important;border:1px solid #333!important;border-radius:2px!important}
+body.gtn .gf .k,body.gtn .cell .k{color:${GC}!important;letter-spacing:.06em}
+body.gtn .gf .v,body.gtn .cell .v{color:#fff!important}
+body.gtn .gf .v small,body.gtn .cell .v small{color:${GC}}`; document.head.appendChild(st); }
 
 /* ================= boot ================= */
 (()=>{ let seed=null; try{ const tx=$('#fmn-seed').textContent.trim(); if(tx) seed=JSON.parse(tx); }catch(e){}
