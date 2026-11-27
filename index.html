@@ -1535,7 +1535,7 @@ const LAYERS={
   gMap:{g:'street',name:'Google Map',url:'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',sub:'0123',max:20,attr:'Map data © Google',fb:['twogis','osm']},
   twogis:{g:'street',name:'2GIS',url:'https://tile{s}.maps.2gis.com/tiles?x={x}&y={y}&z={z}',sub:'0123',max:18,attr:'© 2GIS',fb:['gMap','osm']},
   cartoV:{g:'street',name:'Esri Streets',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',sub:'',max:19,attr:'© Esri, HERE, Garmin, OpenStreetMap contributors',fb:['osm','osmHot']},
-  cartoDark:{g:'night',name:'Esri Dark Gray',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',sub:'',max:16,attr:'© Esri, HERE, Garmin, OpenStreetMap contributors',fb:['osm','cartoV']},
+  cartoDark:{g:'night',name:'Esri Dark Gray',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',sub:'',max:14,attr:'© Esri, HERE, Garmin, OpenStreetMap contributors',fb:['osm','cartoV']},
   custom:{g:'own',name:'Custom / Свой сервер',url:'',sub:'abc',max:20,attr:'Custom tiles'}
 };
 const LGROUPS=[['topo','Topographic'],['sat','Satellite'],['street','Street'],['night','Night'],['own','Own server']];
@@ -4172,7 +4172,7 @@ setTimeout(()=>{ try{ if(CFG.wxl){ delete CFG.wxl.radar; delete CFG.wxl.sat; } c
 /*  AERONAUTICAL CHART (ICAO): airspace, restricted / prohibited / danger areas, FIR / CTA / TMA / CTR,       */
 /*  navaids, VFR reporting points, obstacles, airports (openAIP data), MEF numbers and lat/lon grid          */
 /* ========================================================================== */
-Object.assign(LAYERS,{aero:{g:'aero',name:'Aeronautical chart (ICAO)',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}',sub:'',max:13,attr:'Terrain © Esri · Aeronautical data © openAIP (CC BY-NC 4.0)',fb:['esriTopo','otm']}});
+Object.assign(LAYERS,{aero:{g:'aero',name:'Aeronautical chart (ICAO)',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',sub:'',max:13,attr:'Base © Esri, HERE, Garmin · Aeronautical data © openAIP (CC BY-NC 4.0)',fb:['esriTopo','otm']}});
 LGROUPS.unshift(['aero','Aeronautical']);
 const AERO_CC=['uz','kz','kg','tj','tm','af'], AERO_L=['asp','nav','rpp','obs','apt'];
 const AERO={asp:[],nav:[],rpp:[],obs:[],apt:[],meta:null,busy:false,prog:'',err:''};
@@ -5145,7 +5145,7 @@ Object.assign(RU,{'Scheme points':'Точки схемы','Reference navaid for 
 { const st=document.createElement('style'); st.textContent=`.pfx2a{display:grid;grid-template-columns:30px minmax(0,1fr) 46px 66px;gap:5px;align-items:center}.pfx2b{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 36px 32px 32px 32px;gap:5px;margin-top:5px;align-items:center}.pfx2c{margin-top:5px}.pfx2 select,.pfx2 input{min-height:36px}.pfx-nb{height:30px;border-radius:15px;border:1px solid var(--line);background:var(--surface);color:inherit;font:700 12px var(--f-display)}.pfx-nb.on{background:var(--accent,#0a84ff);color:#fff}.pfx-md{font-size:16px;padding:0}.pfx-md:not(.on){opacity:.55}.pfx-ic{padding:0}.pfx-sticky{position:sticky;bottom:0;z-index:6;background:var(--surface,#1c1c1e);padding:8px 0;margin:8px 0 0;border-top:1px solid var(--line)}.pfx-sticky .btn{flex:1}`; document.head.appendChild(st); }
 
 /* ================= Garmin GTN 650 look: black map, GTN symbols, magenta flight plan, cyan data labels ================= */
-LAYERS.gtn={g:'night',name:'GTN 650 · black map',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',sub:'',max:16,attr:'© Esri, HERE, Garmin, OpenStreetMap contributors',cls:'gtn-base',fb:['cartoDark','osm']};
+LAYERS.gtn={g:'night',name:'GTN 650 · black map',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',sub:'',max:14,attr:'© Esri, HERE, Garmin, OpenStreetMap contributors',cls:'gtn-base',fb:['cartoDark','osm']};
 LAYERS.gtnT={g:'night',name:'GTN 650 · terrain',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',sub:'',max:16,attr:'Hillshade © Esri',cls:'gtn-terr',fb:['gtn']};
 const GB='#3fa9ff', GM='#ff4df0', GC='#34e8ff', GW='#ffffff', GG='#3de07a', GY='#ffd60a', GR='#ff3b30';
 const gRwy=(c)=>`<rect x="-1.5" y="-6.2" width="3" height="12.4" fill="${c}" transform="rotate(35)"/>`;
