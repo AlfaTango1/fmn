@@ -1534,8 +1534,8 @@ const LAYERS={
   osmHot:{g:'street',name:'OSM Humanitarian',url:'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',sub:'abc',max:19,attr:'© OpenStreetMap contributors · HOT',fb:['osm','cartoV']},
   gMap:{g:'street',name:'Google Map',url:'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',sub:'0123',max:20,attr:'Map data © Google',fb:['twogis','osm']},
   twogis:{g:'street',name:'2GIS',url:'https://tile{s}.maps.2gis.com/tiles?x={x}&y={y}&z={z}',sub:'0123',max:18,attr:'© 2GIS',fb:['gMap','osm']},
-  cartoV:{g:'street',name:'Carto Voyager',url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',sub:'abcd',max:20,attr:'© OpenStreetMap contributors · © CARTO',fb:['osm','osmHot']},
-  cartoDark:{g:'night',name:'Carto Dark',url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',sub:'abcd',max:20,attr:'© OpenStreetMap contributors · © CARTO',fb:['cartoV','osm']},
+  cartoV:{g:'street',name:'Esri Streets',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',sub:'',max:19,attr:'© Esri, HERE, Garmin, OpenStreetMap contributors',fb:['osm','osmHot']},
+  cartoDark:{g:'night',name:'Esri Dark Gray',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',sub:'',max:16,attr:'© Esri, HERE, Garmin, OpenStreetMap contributors',fb:['osm','cartoV']},
   custom:{g:'own',name:'Custom / Свой сервер',url:'',sub:'abc',max:20,attr:'Custom tiles'}
 };
 const LGROUPS=[['topo','Topographic'],['sat','Satellite'],['street','Street'],['night','Night'],['own','Own server']];
@@ -5145,7 +5145,7 @@ Object.assign(RU,{'Scheme points':'Точки схемы','Reference navaid for 
 { const st=document.createElement('style'); st.textContent=`.pfx2a{display:grid;grid-template-columns:30px minmax(0,1fr) 46px 66px;gap:5px;align-items:center}.pfx2b{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 36px 32px 32px 32px;gap:5px;margin-top:5px;align-items:center}.pfx2c{margin-top:5px}.pfx2 select,.pfx2 input{min-height:36px}.pfx-nb{height:30px;border-radius:15px;border:1px solid var(--line);background:var(--surface);color:inherit;font:700 12px var(--f-display)}.pfx-nb.on{background:var(--accent,#0a84ff);color:#fff}.pfx-md{font-size:16px;padding:0}.pfx-md:not(.on){opacity:.55}.pfx-ic{padding:0}.pfx-sticky{position:sticky;bottom:0;z-index:6;background:var(--surface,#1c1c1e);padding:8px 0;margin:8px 0 0;border-top:1px solid var(--line)}.pfx-sticky .btn{flex:1}`; document.head.appendChild(st); }
 
 /* ================= Garmin GTN 650 look: black map, GTN symbols, magenta flight plan, cyan data labels ================= */
-LAYERS.gtn={g:'night',name:'GTN 650 · black map',url:'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',sub:'abcd',max:20,attr:'© OpenStreetMap contributors · © CARTO',cls:'gtn-base',fb:['cartoDark','osm']};
+LAYERS.gtn={g:'night',name:'GTN 650 · black map',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',sub:'',max:16,attr:'© Esri, HERE, Garmin, OpenStreetMap contributors',cls:'gtn-base',fb:['cartoDark','osm']};
 LAYERS.gtnT={g:'night',name:'GTN 650 · terrain',url:'https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',sub:'',max:16,attr:'Hillshade © Esri',cls:'gtn-terr',fb:['gtn']};
 const GB='#3fa9ff', GM='#ff4df0', GC='#34e8ff', GW='#ffffff', GG='#3de07a', GY='#ffd60a', GR='#ff3b30';
 const gRwy=(c)=>`<rect x="-1.5" y="-6.2" width="3" height="12.4" fill="${c}" transform="rotate(35)"/>`;
@@ -5168,17 +5168,22 @@ const SYM_G={
   STL:`<circle r="7" fill="#000" fill-opacity=".55" stroke="${GW}" stroke-width="2"/>`, GEO:`<polygon points="0,-9 7,0 0,9 -7,0" fill="#000" fill-opacity=".55" stroke="${GY}" stroke-width="2"/>`,
   OBJ:`<rect x="-6.5" y="-6.5" width="13" height="13" fill="#000" fill-opacity=".55" stroke="${GW}" stroke-width="2"/>`, TGT:`<path d="M-7 -7 7 7M-7 7 7 -7" stroke="${GR}" stroke-width="3.2" stroke-linecap="round"/>`
 };
-{ const _ss=symSvg; symSvg=(tp,disc)=>CFG.style==='gtn'?`<svg viewBox="-12 -12 24 24" width="24" height="24" aria-hidden="true">${SYM_G[tp]||SYM[tp]||SYM_G.WPT}</svg>`:_ss(tp,disc); }
+{ const _ss=symSvg; symSvg=function(tp,disc,rot){ if(CFG.style!=='gtn') return _ss(tp,disc,rot); let g=SYM_G[tp]||SYM[tp]||SYM_G.WPT;
+    if((tp==='AD'||tp==='APT'||tp==='ADM')&&rot!=null){ g=`<circle r="8.2" fill="#000" fill-opacity=".55" stroke="${tp==='ADM'?GM:GB}" stroke-width="2"/><rect x="-1.5" y="-6.2" width="3" height="12.4" fill="${GW}" transform="rotate(${rot})"/>`; }
+    return `<svg viewBox="-12 -12 24 24" width="24" height="24" aria-hidden="true">${g}</svg>`; }; }
 const gtnApply=(sw)=>{ document.body.classList.toggle('gtn',CFG.style==='gtn');
   if(sw){ if(CFG.style==='gtn'){ if(!/^gtn/.test(CFG.layer)){ CFG.prevLayer=CFG.layer; setBase('gtn'); } } else if(/^gtn/.test(CFG.layer)){ setBase(CFG.prevLayer&&!/^gtn/.test(CFG.prevLayer)?CFG.prevLayer:'otm'); }
     try{ renderLib(); renderMap(); applyTheme(); }catch(e){} } };
 gtnApply(false);
 { const _c=ON.cfg; ON.cfg=el=>{ _c(el); if(el.dataset.k==='style'){ saveCfg(); gtnApply(true); } }; }
 { const _vm=vMore; vMore=function(){ return _vm().replace(/(<label class="f"><span>[^<]*(?:Map at night|Карта ночью)[^<]*<\/span>[\s\S]*?<\/label>)/,`<label class="f"><span>${t('Map style and symbols')}</span><select data-on="cfg" data-k="style"><option value="std"${CFG.style!=='gtn'?' selected':''}>${t('Standard')}</option><option value="gtn"${CFG.style==='gtn'?' selected':''}>Garmin GTN 650</option></select></label>$1`); }; }
-Object.assign(RU,{'Map style and symbols':'Стиль карты и знаков','Standard':'Стандартный'});
+Object.assign(RU,{'Map style and symbols':'Стиль карты и знаков','Standard':'Стандартный','on':'вкл','off':'выкл'});
+ACT.gtnTog=()=>{ CFG.style=CFG.style==='gtn'?'std':'gtn'; saveCfg(); gtnApply(true); renderLayerMenu(); };
+{ const _r=renderLayerMenu; renderLayerMenu=function(){ _r.apply(this,arguments); const m=$('#layerMenu'); if(!m||m.querySelector('.lm-gtn')) return; const on=CFG.style==='gtn', d=document.createElement('div'); d.className='lm-gtn'; d.style.cssText='padding:6px 0 8px';
+    d.innerHTML=`<button class="btn${on?' primary':''}" data-act="gtnTog" style="width:100%">Garmin GTN 650 — ${on?t('on'):t('off')}</button>`; m.insertBefore(d,m.firstChild); }; }
 { const st=document.createElement('style'); st.textContent=`body.gtn .leaflet-container,body.gtn #map{background:#000}
 body.gtn .leaflet-tile-pane{filter:none!important}
-.gtn-base{filter:brightness(1.18) contrast(1.15)}
+.gtn-base{filter:brightness(.55) contrast(1.5)}
 .gtn-terr{filter:brightness(.5) sepia(1) saturate(2.2) hue-rotate(-18deg) contrast(1.35)}
 body.gtn .pt-ico{color:#fff}
 body.gtn .pt-ico svg{filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000)}
